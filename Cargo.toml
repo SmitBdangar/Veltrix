@@ -1,0 +1,122 @@
+[package]
+name = "veltrix"
+version = "0.1.0"
+edition = "2021"
+description = "A modular, production-ready 2D game engine built in Rust"
+license = "MIT"
+repository = "https://github.com/SmitBdangar/Veltrix"
+keywords = ["game-engine", "2d", "wgpu", "ecs", "gamedev"]
+categories = ["game-engines", "rendering", "multimedia"]
+
+[lib]
+name = "veltrix"
+path = "src/lib.rs"
+
+[[example]]
+name = "hello_window"
+path = "examples/hello_window.rs"
+
+[[example]]
+name = "sprite_demo"
+path = "examples/sprite_demo.rs"
+
+[[example]]
+name = "physics_demo"
+path = "examples/physics_demo.rs"
+
+[[example]]
+name = "tilemap_demo"
+path = "examples/tilemap_demo.rs"
+
+[[example]]
+name = "full_game_demo"
+path = "examples/full_game_demo.rs"
+
+[dependencies]
+# Windowing
+winit = "0.29"
+
+# GPU Rendering
+wgpu = "0.19"
+
+# Math
+glam = { version = "0.25", features = ["serde"] }
+
+# Physics
+rapier2d = { version = "0.17", features = ["default"] }
+
+# Audio
+rodio = { version = "0.17", features = ["wav", "vorbis", "mp3"] }
+
+# GUI / editor overlay
+egui = "0.26"
+egui-wgpu = "0.26"
+egui-winit = "0.26"
+
+# Image loading
+image = { version = "0.24", features = ["png", "jpeg", "bmp"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+ron = "0.8"
+serde_json = "1"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
+# GPU buffer utilities
+bytemuck = { version = "1", features = ["derive"] }
+
+# Error handling
+anyhow = "1"
+thiserror = "1"
+
+# Generational entity IDs / slot maps
+slotmap = "1"
+
+# File-system watching (hot-reload)
+notify = "6"
+
+# Gamepad support
+gilrs = "0.10"
+
+# ECS (optional — used alongside custom lightweight layer)
+hecs = "0.10"
+
+# Async runtime for asset loading
+pollster = "0.3"
+
+# Random number generation
+rand = "0.8"
+
+# Indexed min-heap for scheduler priority
+indexmap = "2"
+
+# Cross-platform clipboard
+copypasta = "0.10"
+directories = "5.0"
+sysinfo = "0.30"
+
+# XML parsing for Tiled .tmx files
+quick-xml = { version = "0.31", features = ["serialize"] }
+
+[dev-dependencies]
+env_logger = "0.11"
+pretty_assertions = "1"
+
+[profile.dev]
+opt-level = 1          # faster compile, reasonable runtime speed
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+
+[features]
+default = ["audio", "physics", "egui-ui"]
+audio   = []
+physics = []
+egui-ui = []
+hot-reload = []
