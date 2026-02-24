@@ -7,3 +7,4 @@ pub mod scene;
 
 pub use manager::SceneManager;
 pub use scene::Scene;
+pub use components::*;

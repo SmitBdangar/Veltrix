@@ -3,7 +3,6 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use wgpu::Device;
 
 use super::cache::AssetCache;
 use super::handle::{AssetId, Handle};

@@ -6,10 +6,9 @@ pub mod keyboard;
 pub mod mouse;
 
 pub use action_map::ActionMap;
-pub use keyboard::KeyboardState;
+pub use keyboard::{KeyCode, KeyboardState};
 pub use mouse::MouseState;
 
-use crate::math::Vec2;
 
 /// Central input manager — owns keyboard, mouse, and gamepad state.
 #[derive(Debug, Default)]

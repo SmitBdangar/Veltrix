@@ -12,13 +12,12 @@ fn main() -> Result<()> {
         title: "Veltrix - Full Game Demo".to_string(),
         width: 1280,
         height: 720,
-        clear_color: Color::new(0.05, 0.05, 0.05, 1.0),
         vsync: true,
         ..Default::default()
     };
 
     // 2. Build the main engine wrapper
-    let mut engine = EngineBuilder::new()
+    let engine = EngineBuilder::new()
         .with_config(config)
         .build()?;
 
@@ -65,7 +64,7 @@ fn main() -> Result<()> {
             let mut anim_ctrl = AnimationController::new();
             anim_ctrl.add_clip(AnimationClip {
                 name: "idle".to_string(),
-                frames: vec![Rect::new(0.0, 0.0, 32.0, 64.0)],
+                frames: vec![Rect::new(Vec2::new(0.0, 0.0), Vec2::new(32.0, 64.0))],
                 frame_rate: 6.0,
                 looping: true,
             });
@@ -76,7 +75,7 @@ fn main() -> Result<()> {
             resources.insert(physics);
             
             // Register AudioManager
-            let mut audio_manager = AudioManager::new();
+            let audio_manager = AudioManager::new();
             // Start playing background music loop
             // let bgm_handle = assets.load("bgm.ogg").unwrap();
             // audio_manager.play_looped(&assets, &bgm_handle, AudioBusName::Music, 0.5);
@@ -89,10 +88,10 @@ fn main() -> Result<()> {
 
             // Input mapping example:
             if let Some(input) = resources.get::<InputManager>() {
-                if input.keyboard().just_pressed(KeyCode::Space) {
+                if input.keyboard.just_pressed(KeyCode::Space) {
                     // Start screen shake
                     let cam_ent = *resources.get::<Entity>().unwrap();
-                    if let Some(mut shake) = world.get_mut::<CameraShake>(cam_ent) {
+                    if let Some(shake) = world.get_mut::<CameraShake>(cam_ent) {
                         shake.add_trauma(0.8);
                     }
                 }
@@ -102,22 +101,23 @@ fn main() -> Result<()> {
             let dt_f32 = dt as f32;
             let mut query = QueryMut::<AnimationController>::new(world);
             // In a real framework, we'd join QueryMut with `AnimatedSprite`
-            for (_e, ctrl) in query.iter_mut() {
+            for (_e, _ctrl) in query.iter_mut() {
                 // AnimationController::update_sprite(...) 
             }
 
             // Update Camera Shake
             let cam_ent = *resources.get::<Entity>().unwrap();
-            if let Some(mut shake) = world.get_mut::<CameraShake>(cam_ent) {
+            if let Some(shake) = world.get_mut::<CameraShake>(cam_ent) {
                 let (offset, _rot) = shake.update(dt_f32);
-                if let Some(mut cam_transform) = world.get_mut::<Transform2D>(cam_ent) {
+                if let Some(cam_transform) = world.get_mut::<Transform2D>(cam_ent) {
                     cam_transform.position += offset;
                 }
             }
+            true
         },
         |world, resources, fixed_dt| {
             // Fixed update Loop (Physics stepping & syncing)
-            if let Some(mut physics) = resources.get_mut::<PhysicsWorld>() {
+            if let Some(physics) = resources.get_mut::<PhysicsWorld>() {
                 physics.step(fixed_dt as f32);
                 sync_physics_to_transforms(world, &physics);
                 

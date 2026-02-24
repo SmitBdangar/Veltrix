@@ -1,7 +1,6 @@
 //! Trauma-based procedural camera shake.
 
 use glam::Vec2;
-use crate::math::random_range;
 
 /// Procedural trauma-based 2D camera shake.
 #[derive(Debug, Clone)]

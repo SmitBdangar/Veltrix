@@ -9,5 +9,6 @@ pub mod world;
 
 pub use commands::Commands;
 pub use resources::Resources;
+pub use query::{Query, QueryMut};
 pub use system::{System, SystemScheduler, SystemStage};
 pub use world::{Entity, World};

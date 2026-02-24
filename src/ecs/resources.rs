@@ -10,7 +10,7 @@ use std::collections::HashMap;
 /// A container for application-wide singletons.
 #[derive(Default)]
 pub struct Resources {
-    data: HashMap<TypeId, Box<dyn Any + Send + Sync>>,
+    data: HashMap<TypeId, Box<dyn Any>>,
 }
 
 impl std::fmt::Debug for Resources {
@@ -28,39 +28,39 @@ impl Resources {
     }
 
     /// Insert a new resource, overwriting the old one if it exists.
-    pub fn insert<T: Any + Send + Sync + 'static>(&mut self, resource: T) {
+    pub fn insert<T: Any + 'static>(&mut self, resource: T) {
         self.data.insert(TypeId::of::<T>(), Box::new(resource));
     }
 
     /// Remove a resource of type `T` and return it.
-    pub fn remove<T: Any + Send + Sync + 'static>(&mut self) -> Option<T> {
+    pub fn remove<T: Any + 'static>(&mut self) -> Option<T> {
         self.data
             .remove(&TypeId::of::<T>())
             .and_then(|boxed| boxed.downcast::<T>().ok().map(|b| *b))
     }
 
     /// Get an immutable reference to a resource of type `T`.
-    pub fn get<T: Any + Send + Sync + 'static>(&self) -> Option<&T> {
+    pub fn get<T: Any + 'static>(&self) -> Option<&T> {
         self.data
             .get(&TypeId::of::<T>())
             .and_then(|boxed| boxed.downcast_ref::<T>())
     }
 
     /// Get a mutable reference to a resource of type `T`.
-    pub fn get_mut<T: Any + Send + Sync + 'static>(&mut self) -> Option<&mut T> {
+    pub fn get_mut<T: Any + 'static>(&mut self) -> Option<&mut T> {
         self.data
             .get_mut(&TypeId::of::<T>())
             .and_then(|boxed| boxed.downcast_mut::<T>())
     }
 
     /// Helper to unwrap `get` or return a nice `anyhow::Error`.
-    pub fn expect<T: Any + Send + Sync + 'static>(&self) -> Result<&T> {
+    pub fn expect<T: Any + 'static>(&self) -> Result<&T> {
         self.get::<T>()
             .ok_or_else(|| anyhow!("Resource {} not found", std::any::type_name::<T>()))
     }
 
     /// Helper to unwrap `get_mut` or return a nice `anyhow::Error`.
-    pub fn expect_mut<T: Any + Send + Sync + 'static>(&mut self) -> Result<&mut T> {
+    pub fn expect_mut<T: Any + 'static>(&mut self) -> Result<&mut T> {
         self.get_mut::<T>()
             .ok_or_else(|| anyhow!("Resource {} not found", std::any::type_name::<T>()))
     }

@@ -8,5 +8,5 @@ pub mod time;
 
 pub use config::Config;
 pub use engine::{Engine, EngineBuilder};
-pub use event::EventBus;
+pub use event::{EventBus, EventHandler};
 pub use time::Time;

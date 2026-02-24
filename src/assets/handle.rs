@@ -1,9 +1,7 @@
 //! Typed strong and weak references to dynamically loaded assets.
 
-use std::any::Any;
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
-use std::sync::Arc;
 
 /// A type-erased unique identifier for a loaded asset.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

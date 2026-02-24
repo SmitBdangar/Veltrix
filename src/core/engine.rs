@@ -9,6 +9,7 @@ use winit::{
 };
 
 use super::{config::Config, event::EventBus, game_loop::GameLoop, time::Time};
+use crate::ecs::{world::World, resources::Resources};
 
 /// Builder for configuring the engine before starting the main loop.
 ///
@@ -40,6 +41,12 @@ impl EngineBuilder {
     /// Load configuration from a `.ron` file, overriding programmatic defaults.
     pub fn with_config_file(mut self, path: impl Into<std::path::PathBuf>) -> Self {
         self.config_path = Some(path.into());
+        self
+    }
+
+    /// Override the entire configuration object.
+    pub fn with_config(mut self, config: Config) -> Self {
+        self.config = config;
         self
     }
 
@@ -101,6 +108,8 @@ impl EngineBuilder {
             game_loop: GameLoop::new(self.config.fixed_timestep),
             time: Time::new(),
             event_bus: EventBus::new(),
+            world: World::new(),
+            resources: Resources::new(),
         })
     }
 }
@@ -118,6 +127,10 @@ pub struct Engine {
     pub time: Time,
     /// Engine-wide event bus.
     pub event_bus: EventBus,
+    /// ECS World.
+    pub world: World,
+    /// ECS Resources.
+    pub resources: Resources,
 }
 
 impl Engine {
@@ -142,19 +155,21 @@ impl Engine {
         mut on_render: Render,
     ) -> Result<()>
     where
-        Start: FnOnce(&mut Engine),
-        Update: FnMut(&mut Engine, f64) -> bool,
-        Fixed: FnMut(&mut Engine),
-        Render: FnMut(&mut Engine, f64),
+        Start: FnOnce(&mut World, &mut Resources),
+        Update: FnMut(&mut World, &mut Resources, f64) -> bool,
+        Fixed: FnMut(&mut World, &mut Resources, f64),
+        Render: FnMut(&mut World, &mut Resources, f64),
     {
+        // Fire on_start before the loop begins.
+        on_start(&mut self.world, &mut self.resources);
+
         let event_loop: EventLoop<()> = EventLoop::new()
             .map_err(|e| anyhow::anyhow!("EventLoop creation failed: {e}"))?;
         event_loop.set_control_flow(ControlFlow::Poll);
 
-        // Fire on_start before the loop begins.
-        on_start(&mut self);
+        event_loop.set_control_flow(ControlFlow::Poll);
 
-        let mut should_exit = false;
+        let _should_exit = false;
 
         event_loop.run(move |event, elwt| {
             match event {
@@ -180,11 +195,11 @@ impl Engine {
 
                     // Fixed-timestep iterations.
                     while self.game_loop.step() {
-                        on_fixed(&mut self);
+                        on_fixed(&mut self.world, &mut self.resources, self.config.fixed_timestep);
                     }
 
                     // Variable-timestep update.
-                    if !on_update(&mut self, real_dt) {
+                    if !on_update(&mut self.world, &mut self.resources, real_dt) {
                         log::info!("on_update returned false — exiting.");
                         elwt.exit();
                         return;
@@ -192,7 +207,7 @@ impl Engine {
 
                     // Render with interpolation alpha.
                     let alpha = self.game_loop.alpha();
-                    on_render(&mut self, alpha);
+                    on_render(&mut self.world, &mut self.resources, alpha);
 
                     // Flush events after all systems have run.
                     self.event_bus.flush();

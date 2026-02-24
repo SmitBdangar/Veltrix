@@ -95,7 +95,7 @@ impl GameLoop {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::thread::sleep;
+    
 
     #[test]
     fn accumulates_and_steps() {

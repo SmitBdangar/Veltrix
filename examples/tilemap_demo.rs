@@ -7,7 +7,7 @@ use glam::Vec2;
 use veltrix::prelude::*;
 
 fn main() -> Result<()> {
-    let mut engine = EngineBuilder::new()
+    let engine = EngineBuilder::new()
         .with_config(Config {
             title: "Veltrix - Tilemap Demo".to_string(),
             ..Default::default()
@@ -88,6 +88,7 @@ fn main() -> Result<()> {
                     break;
                 }
             }
+            true
         },
         |_world, _resources, _fixed_dt| {
             // Physics / fixed steps
@@ -101,7 +102,7 @@ fn main() -> Result<()> {
             let cam_follow = world.get::<CameraFollow>(cam_entity).unwrap();
             
             // 2. Read where player is
-            let target_pos = if let Some(target) = cam_follow.target {
+            let _target_pos = if let Some(target) = cam_follow.target {
                 world.get::<Transform2D>(target).map(|t| t.position).unwrap_or(cam.position)
             } else {
                 cam.position

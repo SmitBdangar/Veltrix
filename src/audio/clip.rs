@@ -1,7 +1,7 @@
 //! The AudioClip asset type.
 
 use std::io::Cursor;
-use rodio::{Decoder, Source};
+use rodio::Decoder;
 
 use crate::assets::server::Asset;
 

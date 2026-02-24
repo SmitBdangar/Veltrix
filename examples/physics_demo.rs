@@ -7,7 +7,7 @@ use glam::Vec2;
 use veltrix::prelude::*;
 
 fn main() -> Result<()> {
-    let mut engine = EngineBuilder::new()
+    let engine = EngineBuilder::new()
         .with_config(Config {
             title: "Veltrix - Physics Demo".to_string(),
             ..Default::default()
@@ -22,7 +22,7 @@ fn main() -> Result<()> {
             resources.insert(cam);
 
             // Access the global physics world from resources
-            let mut physics = PhysicsWorld::new(Vec2::new(0.0, -9.81));
+            let physics = PhysicsWorld::new(Vec2::new(0.0, -9.81));
 
             // Create a static floor
             let floor = world.spawn();
@@ -88,10 +88,11 @@ fn main() -> Result<()> {
         },
         |_world, _resources, _dt| {
             // Handle input if needed
+            true
         },
         |world, resources, fixed_dt| {
             // Fixed update runs the physics engine
-            if let Some(mut physics) = resources.get_mut::<PhysicsWorld>() {
+            if let Some(physics) = resources.get_mut::<PhysicsWorld>() {
                 physics.step(fixed_dt as f32);
                 
                 // Sync positions back to ECS

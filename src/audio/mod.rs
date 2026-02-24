@@ -6,3 +6,4 @@ pub mod manager;
 pub mod spatial;
 
 pub use manager::AudioManager;
+pub use clip::AudioClip;

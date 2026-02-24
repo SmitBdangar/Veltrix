@@ -2,7 +2,7 @@
 
 use crate::assets::handle::Handle;
 use crate::ecs::world::Entity;
-use crate::math::{Rect, Transform2D};
+use crate::math::Rect;
 use crate::renderer::{color::Color, texture::Texture};
 use serde::{Deserialize, Serialize};
 

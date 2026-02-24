@@ -88,7 +88,7 @@ impl Config {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Write;
+    
     use tempfile::NamedTempFile;
 
     #[test]
@@ -110,7 +110,7 @@ mod tests {
             fps_cap: 120,
             ..Default::default()
         };
-        let mut tmp = NamedTempFile::new().unwrap();
+        let tmp = NamedTempFile::new().unwrap();
         original.save_to_file(tmp.path()).unwrap();
         let loaded = Config::from_file(tmp.path()).unwrap();
         assert_eq!(loaded.title, "Test Game");

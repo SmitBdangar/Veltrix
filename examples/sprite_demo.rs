@@ -7,15 +7,14 @@ use glam::Vec2;
 use veltrix::prelude::*;
 
 fn main() -> Result<()> {
-    let mut engine = EngineBuilder::new()
+    let engine = EngineBuilder::new()
         .with_config(Config {
             title: "Veltrix - Sprite Demo".to_string(),
             ..Default::default()
         })
         .build()?;
 
-    // Global Entity ID to modify in the update loop
-    let mut player_entity = Entity::null();
+struct PlayerEnt(Entity);
 
     engine.run(
         |world, resources| {
@@ -25,7 +24,8 @@ fn main() -> Result<()> {
             resources.insert(cam); // Store active camera ID in resources
 
             // Setup player sprite
-            player_entity = world.spawn();
+            let player_entity = world.spawn();
+            resources.insert(PlayerEnt(player_entity));
             world.insert(
                 player_entity,
                 Transform2D {
@@ -42,28 +42,30 @@ fn main() -> Result<()> {
         |world, resources, dt| {
             // Update loop: Read input and move player
             let input = resources.get::<InputManager>().unwrap();
+            let player_entity = resources.get::<PlayerEnt>().unwrap().0;
             let mut move_dir = Vec2::ZERO;
 
-            if input.keyboard().is_pressed(KeyCode::KeyW) {
+            if input.keyboard.is_pressed(KeyCode::KeyW) {
                 move_dir.y += 1.0;
             }
-            if input.keyboard().is_pressed(KeyCode::KeyS) {
+            if input.keyboard.is_pressed(KeyCode::KeyS) {
                 move_dir.y -= 1.0;
             }
-            if input.keyboard().is_pressed(KeyCode::KeyA) {
+            if input.keyboard.is_pressed(KeyCode::KeyA) {
                 move_dir.x -= 1.0;
             }
-            if input.keyboard().is_pressed(KeyCode::KeyD) {
+            if input.keyboard.is_pressed(KeyCode::KeyD) {
                 move_dir.x += 1.0;
             }
 
             if move_dir.length_squared() > 0.0 {
                 move_dir = move_dir.normalize();
-                if let Some(mut transform) = world.get_mut::<Transform2D>(player_entity) {
+                if let Some(transform) = world.get_mut::<Transform2D>(player_entity) {
                     let speed = 200.0;
                     transform.position += move_dir * speed * dt as f32;
                 }
             }
+            true
         },
         |_world, _resources, _fixed_dt| {
             // Fixed update (Physics)

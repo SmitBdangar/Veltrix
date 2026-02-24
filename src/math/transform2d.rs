@@ -92,7 +92,7 @@ impl Transform2D {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::f32::consts::{FRAC_PI_2, PI};
+    use std::f32::consts::FRAC_PI_2;
 
     #[test]
     fn identity_mat4_is_valid() {
