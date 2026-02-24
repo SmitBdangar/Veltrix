@@ -1,0 +1,762 @@
+warning: ambiguous glob re-exports
+  --> src\lib.rs:53:13
+   |
+53 |     pub use crate::animation::*;
+   |             ^^^^^^^^^^^^^^^^^^^ the name `clip` in the type namespace is first re-exported here
+54 |     pub use crate::assets::*;
+55 |     pub use crate::audio::*;
+   |             --------------- but the name `clip` in the type namespace is also re-exported here
+   |
+   = note: `#[warn(ambiguous_glob_reexports)]` on by default
+
+warning: ambiguous glob re-exports
+  --> src\lib.rs:54:13
+   |
+54 |     pub use crate::assets::*;
+   |             ^^^^^^^^^^^^^^^^ the name `loader` in the type namespace is first re-exported here
+...
+65 |     pub use crate::scene::*;
+   |             --------------- but the name `loader` in the type namespace is also re-exported here
+
+warning: ambiguous glob re-exports
+  --> src\lib.rs:55:13
+   |
+55 |     pub use crate::audio::*;
+   |             ^^^^^^^^^^^^^^^ the name `manager` in the type namespace is first re-exported here
+...
+70 |     pub use crate::window::*;
+   |             ---------------- but the name `manager` in the type namespace is also re-exported here
+
+warning: ambiguous glob re-exports
+  --> src\lib.rs:58:13
+   |
+58 |     pub use crate::debug::*;
+   |             ^^^^^^^^^^^^^^^ the name `renderer` in the type namespace is first re-exported here
+...
+68 |     pub use crate::tilemap::*;
+   |             ----------------- but the name `renderer` in the type namespace is also re-exported here
+
+warning: ambiguous glob re-exports
+  --> src\lib.rs:59:13
+   |
+59 |     pub use crate::ecs::*;
+   |             ^^^^^^^^^^^^^ the name `world` in the type namespace is first re-exported here
+...
+62 |     pub use crate::physics::*;
+   |             ----------------- but the name `world` in the type namespace is also re-exported here
+
+warning: unused import: `slotmap::Key`
+ --> src\ecs\storage.rs:5:5
+  |
+5 | use slotmap::Key;
+  |     ^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: fields `watcher` and `root_dir` are never read
+  --> src\assets\loader.rs:9:5
+   |
+ 8 | pub struct AssetLoader {
+   |            ----------- fields in this struct
+ 9 |     watcher: RecommendedWatcher,
+   |     ^^^^^^^
+...
+12 |     root_dir: PathBuf,
+   |     ^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `sinks` is never read
+  --> src\audio\manager.rs:20:5
+   |
+11 | pub struct AudioManager {
+   |            ------------ field in this struct
+...
+20 |     sinks: Vec<Sink>,
+   |     ^^^^^
+
+warning: field `name` is never read
+  --> src\ecs\system.rs:28:5
+   |
+27 | struct SystemFn {
+   |        -------- field in this struct
+28 |     name: String,
+   |     ^^^^
+
+warning: method `begin_frame` is never used
+  --> src\input\gamepad.rs:57:19
+   |
+34 | impl GamepadState {
+   | ----------------- method in this implementation
+...
+57 |     pub(crate) fn begin_frame(&mut self) {
+   |                   ^^^^^^^^^^^
+
+warning: method `process_event` is never used
+  --> src\input\keyboard.rs:25:19
+   |
+17 | impl KeyboardState {
+   | ------------------ method in this implementation
+...
+25 |     pub(crate) fn process_event(&mut self, keycode: KeyCode, is_...
+   |                   ^^^^^^^^^^^^^
+
+warning: methods `process_button`, `process_position`, `process_delta`, and `process_scroll` are never used
+  --> src\input\mouse.rs:34:19
+   |
+24 | impl MouseState {
+   | --------------- methods in this implementation
+...
+34 |     pub(crate) fn process_button(&mut self, button: MouseButton,...
+   |                   ^^^^^^^^^^^^^^
+...
+47 |     pub(crate) fn process_position(&mut self, pos: Vec2) {
+   |                   ^^^^^^^^^^^^^^^^
+...
+52 |     pub(crate) fn process_delta(&mut self, delta: Vec2) {
+   |                   ^^^^^^^^^^^^^
+...
+57 |     pub(crate) fn process_scroll(&mut self, delta: Vec2) {
+   |                   ^^^^^^^^^^^^^^
+
+warning: field `app_id` is never read
+ --> src\platform\filesystem.rs:8:5
+  |
+7 | pub struct FileSystem {
+  |            ---------- field in this struct
+8 |     app_id: String,
+  |     ^^^^^^
+
+warning: missing documentation for a variant
+  --> src\animation\tween.rs:9:5
+   |
+ 9 |     Linear,
+   |     ^^^^^^
+   |
+note: the lint level is defined here
+  --> src\lib.rs:30:9
+   |
+30 | #![warn(missing_docs)]
+   |         ^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src\animation\tween.rs:10:5
+   |
+10 |     EaseIn,
+   |     ^^^^^^
+
+warning: missing documentation for a variant
+  --> src\animation\tween.rs:11:5
+   |
+11 |     EaseOut,
+   |     ^^^^^^^
+
+warning: missing documentation for a variant
+  --> src\animation\tween.rs:12:5
+   |
+12 |     EaseInOut,
+   |     ^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> src\animation\tween.rs:13:5
+   |
+13 |     Bounce,
+   |     ^^^^^^
+
+warning: missing documentation for a variant
+  --> src\animation\tween.rs:14:5
+   |
+14 |     Elastic,
+   |     ^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\animation\tween.rs:65:5
+   |
+65 |     pub start: T,
+   |     ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\animation\tween.rs:66:5
+   |
+66 |     pub end: T,
+   |     ^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\animation\tween.rs:67:5
+   |
+67 |     pub duration: f32,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\animation\tween.rs:68:5
+   |
+68 |     pub elapsed: f32,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\animation\tween.rs:69:5
+   |
+69 |     pub easing: Easing,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src\animation\tween.rs:73:5
+   |
+73 |     pub fn new(start: T, end: T, duration: f32, easing: Easing) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> src\animation\tween.rs:93:5
+   |
+93 |     pub fn progress(&self) -> f32 {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> src\animation\tween.rs:103:5
+    |
+103 |     pub fn value(&self) -> f32 {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> src\animation\tween.rs:110:5
+    |
+110 |     pub fn value(&self) -> Vec2 {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+ --> src\audio\bus.rs:6:5
+  |
+6 |     Master,
+  |     ^^^^^^
+
+warning: missing documentation for a variant
+ --> src\audio\bus.rs:7:5
+  |
+7 |     Music,
+  |     ^^^^^
+
+warning: missing documentation for a variant
+ --> src\audio\bus.rs:8:5
+  |
+8 |     Sfx,
+  |     ^^^
+
+warning: missing documentation for a variant
+ --> src\audio\bus.rs:9:5
+  |
+9 |     UI,
+  |     ^^
+
+warning: missing documentation for a struct field
+  --> src\audio\bus.rs:15:5
+   |
+15 |     pub name: AudioBusName,
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\audio\bus.rs:16:5
+   |
+16 |     pub volume: f32,
+   |     ^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src\audio\bus.rs:20:5
+   |
+20 |     pub fn new(name: AudioBusName) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src\camera\follow.rs:31:5
+   |
+31 |     pub fn new(target: Entity) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+ --> src\debug\console.rs:9:5
+  |
+9 |     pub messages: Arc<Mutex<VecDeque<String>>>,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\debug\console.rs:10:5
+   |
+10 |     pub max_lines: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\debug\console.rs:33:5
+   |
+33 |     pub is_open: bool,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\debug\console.rs:34:5
+   |
+34 |     pub input_buffer: String,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\debug\console.rs:35:5
+   |
+35 |     pub messages: Arc<Mutex<VecDeque<String>>>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src\debug\console.rs:39:5
+   |
+39 |     pub fn new() -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+ --> src\debug\profiler.rs:8:5
+  |
+8 |     pub frames: Vec<FrameProfile>,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> src\debug\profiler.rs:13:1
+   |
+13 | pub struct FrameProfile {
+   | ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\debug\profiler.rs:14:5
+   |
+14 |     pub start: Instant,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\debug\profiler.rs:15:5
+   |
+15 |     pub end: Option<Instant>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\debug\profiler.rs:16:5
+   |
+16 |     pub systems: Vec<SystemProfile>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> src\debug\profiler.rs:20:1
+   |
+20 | pub struct SystemProfile {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\debug\profiler.rs:21:5
+   |
+21 |     pub name: String,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\debug\profiler.rs:22:5
+   |
+22 |     pub duration_ms: f64,
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src\debug\profiler.rs:26:5
+   |
+26 |     pub fn new() -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+ --> src\debug\renderer.rs:8:5
+  |
+8 |     pub start: Vec2,
+  |     ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+ --> src\debug\renderer.rs:9:5
+  |
+9 |     pub end: Vec2,
+  |     ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\debug\renderer.rs:10:5
+   |
+10 |     pub color: Color,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\debug\renderer.rs:11:5
+   |
+11 |     pub duration: f32,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\debug\renderer.rs:16:5
+   |
+16 |     pub center: Vec2,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\debug\renderer.rs:17:5
+   |
+17 |     pub radius: f32,
+   |     ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\debug\renderer.rs:18:5
+   |
+18 |     pub color: Color,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\debug\renderer.rs:19:5
+   |
+19 |     pub duration: f32,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\debug\renderer.rs:25:5
+   |
+25 |     pub lines: Vec<DebugLine>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\debug\renderer.rs:26:5
+   |
+26 |     pub circles: Vec<DebugCircle>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src\debug\renderer.rs:30:5
+   |
+30 |     pub fn new() -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> src\ecs\storage.rs:15:5
+   |
+15 |     fn as_any_mut(&mut self) -> &mut dyn Any;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\physics\collision.rs:29:5
+   |
+29 |     pub events: Vec<CollisionEvent>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src\physics\collision.rs:33:5
+   |
+33 |     pub fn new() -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> src\physics\collision.rs:37:5
+   |
+37 |     pub fn push(&mut self, event: CollisionEvent) {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> src\physics\collision.rs:41:5
+   |
+41 |     pub fn clear(&mut self) {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src\platform\clipboard.rs:17:5
+   |
+17 |     pub fn new() -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src\platform\system_info.rs:17:5
+   |
+17 |     pub fn new() -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated constant
+  --> src\renderer\color.rs:98:5
+   |
+98 |     pub const WHITE:       Self = Self::rgb(1.0, 1.0, 1.0);
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated constant
+  --> src\renderer\color.rs:99:5
+   |
+99 |     pub const BLACK:       Self = Self::rgb(0.0, 0.0, 0.0);
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated constant
+   --> src\renderer\color.rs:100:5
+    |
+100 |     pub const TRANSPARENT: Self = Self::rgba(0.0, 0.0, 0.0, 0.0);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated constant
+   --> src\renderer\color.rs:101:5
+    |
+101 |     pub const RED:         Self = Self::rgb(1.0, 0.0, 0.0);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated constant
+   --> src\renderer\color.rs:102:5
+    |
+102 |     pub const GREEN:       Self = Self::rgb(0.0, 1.0, 0.0);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated constant
+   --> src\renderer\color.rs:103:5
+    |
+103 |     pub const BLUE:        Self = Self::rgb(0.0, 0.0, 1.0);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated constant
+   --> src\renderer\color.rs:104:5
+    |
+104 |     pub const YELLOW:      Self = Self::rgb(1.0, 1.0, 0.0);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated constant
+   --> src\renderer\color.rs:105:5
+    |
+105 |     pub const CYAN:        Self = Self::rgb(0.0, 1.0, 1.0);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated constant
+   --> src\renderer\color.rs:106:5
+    |
+106 |     pub const MAGENTA:     Self = Self::rgb(1.0, 0.0, 1.0);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated constant
+   --> src\renderer\color.rs:107:5
+    |
+107 |     pub const ORANGE:      Self = Self::rgb(1.0, 0.647, 0.0);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated constant
+   --> src\renderer\color.rs:108:5
+    |
+108 |     pub const PURPLE:      Self = Self::rgb(0.502, 0.0, 0.502);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated constant
+   --> src\renderer\color.rs:109:5
+    |
+109 |     pub const GRAY:        Self = Self::rgb(0.5, 0.5, 0.5);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated constant
+   --> src\renderer\color.rs:110:5
+    |
+110 |     pub const DARK_GRAY:   Self = Self::rgb(0.25, 0.25, 0.25);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated constant
+   --> src\renderer\color.rs:111:5
+    |
+111 |     pub const LIGHT_GRAY:  Self = Self::rgb(0.75, 0.75, 0.75);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+ --> src\renderer\device.rs:8:5
+  |
+8 |     pub fn new() -> Self {
+  |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src\renderer\sprite_batcher.rs:11:5
+   |
+11 |     pub fn new() -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> src\renderer\sprite_batcher.rs:15:5
+   |
+15 |     pub fn draw_sprite(&mut self, _sprite: &Sprite, _transform: &Transform2D, _z_index: f32) {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+ --> src\renderer\texture.rs:8:5
+  |
+8 |     pub width: u32,
+  |     ^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+ --> src\renderer\texture.rs:9:5
+  |
+9 |     pub height: u32,
+  |     ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a type alias
+  --> src\renderer\texture.rs:18:1
+   |
+18 | pub type TextureHandle = crate::assets::handle::Handle<Texture>;
+   | ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\scene\components.rs:89:5
+   |
+89 |     pub handle_id: u64,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src\scene\components.rs:104:5
+    |
+104 |     pub shape: ColliderShape,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src\scene\components.rs:105:5
+    |
+105 |     pub is_trigger: bool,
+    |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src\scene\components.rs:106:5
+    |
+106 |     pub bounciness: f32,
+    |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src\scene\components.rs:107:5
+    |
+107 |     pub friction: f32,
+    |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src\scene\components.rs:117:5
+    |
+117 |     pub clip: Handle<crate::audio::clip::AudioClip>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src\scene\components.rs:118:5
+    |
+118 |     pub volume: f32,
+    |     ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src\scene\components.rs:119:5
+    |
+119 |     pub pitch: f32,
+    |     ^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src\scene\components.rs:120:5
+    |
+120 |     pub looping: bool,
+    |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src\scene\components.rs:121:5
+    |
+121 |     pub auto_play: bool,
+    |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> src\scene\components.rs:122:5
+    |
+122 |     pub is_playing: bool,
+    |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+   --> src\scene\components.rs:126:5
+    |
+126 |     pub fn new(clip: Handle<crate::audio::clip::AudioClip>) -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src\scripting\state_machine.rs:37:5
+   |
+37 |     pub fn new() -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\serialization\save_game.rs:14:5
+   |
+14 |     pub string_vars: HashMap<String, String>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\serialization\save_game.rs:15:5
+   |
+15 |     pub int_vars: HashMap<String, i64>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\serialization\save_game.rs:16:5
+   |
+16 |     pub float_vars: HashMap<String, f64>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> src\serialization\save_game.rs:17:5
+   |
+17 |     pub bool_vars: HashMap<String, bool>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> src\serialization\save_game.rs:21:5
+   |
+21 |     pub fn new() -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a function
+ --> src\ui\style.rs:5:1
+  |
+5 | pub fn apply_dark_theme(ctx: &egui::Context) {
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a function
+  --> src\ui\style.rs:12:1
+   |
+12 | pub fn apply_light_theme(ctx: &egui::Context) {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `veltrix` (lib) generated 109 warnings
+    Checking veltrix v0.1.0 (C:\Users\Admin\github\Veltrix)
+warning: variable does not need to be mutable
+   --> examples\pong.rs:237:37
+    |
+237 |                         if let Some(mut vel) = world.get_mut::<Velocity>(state.ball_entity) {
+    |                                     ----^^^
+    |                                     |
+    |                                     help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> examples\pong.rs:258:29
+    |
+258 |                 if let Some(mut transform) = world.get_mut::<Transform2D>(state.ball_entity) {
+    |                             ----^^^^^^^^^
+    |                             |
+    |                             help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> examples\pong.rs:261:29
+    |
+261 |                 if let Some(mut vel) = world.get_mut::<Velocity>(state.ball_entity) {
+    |                             ----^^^
+    |                             |
+    |                             help: remove this `mut`
+
+error[E0502]: cannot borrow `*world` as mutable because it is also borrowed as immutable
+   --> examples\pong.rs:237:48
+    |
+229 |                 let q_paddles = Query::<(Paddle, Transform2D)>::new(world);
+    |                                                                     ----- immutable borrow occurs here
+...
+232 |                 for (_e, (_paddle, p_transform)) in q_paddles.iter() {
+    |                                                     ---------------- immutable borrow later used here
+...
+237 |                         if let Some(mut vel) = world.get_mut::<Velocity>(state.ball_entity) {
+    |                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ mutable borrow occurs here
+
+warning: variable does not need to be mutable
+  --> examples\pong.rs:48:9
+   |
+48 |     let mut engine = EngineBuilder::new()
+   |         ----^^^^^^
+   |         |
+   |         help: remove this `mut`
+
+For more information about this error, try `rustc --explain E0502`.
+warning: `veltrix` (example "pong") generated 4 warnings
+error: could not compile `veltrix` (example "pong") due to 1 previous error; 4 warnings emitted

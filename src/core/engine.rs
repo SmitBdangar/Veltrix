@@ -167,7 +167,14 @@ impl Engine {
             .map_err(|e| anyhow::anyhow!("EventLoop creation failed: {e}"))?;
         event_loop.set_control_flow(ControlFlow::Poll);
 
-        event_loop.set_control_flow(ControlFlow::Poll);
+        let window = winit::window::WindowBuilder::new()
+            .with_title(&self.config.title)
+            .with_inner_size(winit::dpi::LogicalSize::new(
+                self.config.width as f64,
+                self.config.height as f64,
+            ))
+            .build(&event_loop)
+            .map_err(|e| anyhow::anyhow!("Window creation failed: {e}"))?;
 
         let _should_exit = false;
 
@@ -189,6 +196,13 @@ impl Engine {
                 }
 
                 Event::AboutToWait => {
+                    window.request_redraw();
+                }
+
+                Event::WindowEvent {
+                    event: WindowEvent::RedrawRequested,
+                    ..
+                } => {
                     // ---- Frame start ----
                     let real_dt = self.game_loop.begin_frame();
                     self.time.tick();
