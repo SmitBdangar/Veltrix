@@ -23,7 +23,7 @@ impl Entity {
 pub struct World {
     /// Allocates generational indices for entities.
     entities: SlotMap<Entity, ()>,
-    /// Maps Component TypeId -> BoxedStorage (ComponentStorage<T>).
+    /// Maps component `TypeId` → `BoxedStorage` (`ComponentStorage<T>`).
     component_storages: HashMap<TypeId, Box<dyn BoxedStorage>>,
 }
 

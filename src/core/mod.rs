@@ -5,6 +5,7 @@ pub mod engine;
 pub mod event;
 pub mod game_loop;
 pub mod time;
+pub mod error_screen;
 
 pub use config::Config;
 pub use engine::{Engine, EngineBuilder};

@@ -22,6 +22,8 @@ pub struct AssetServer {
     cache: Arc<Mutex<AssetCache>>,
     /// Maps file paths to their canonical AssetId.
     paths: Arc<Mutex<HashMap<PathBuf, AssetId>>>,
+    /// Fallback static bundled byte arrays (e.g. from `include_bytes!`).
+    embedded_assets: Arc<Mutex<HashMap<PathBuf, Vec<u8>>>>,
     /// Global monotonic ID generator.
     next_id: Arc<Mutex<u64>>,
     /// Asset root folder (e.g., `assets/`).
@@ -34,6 +36,7 @@ impl AssetServer {
         Self {
             cache: Arc::new(Mutex::new(AssetCache::new())),
             paths: Arc::new(Mutex::new(HashMap::new())),
+            embedded_assets: Arc::new(Mutex::new(HashMap::new())),
             next_id: Arc::new(Mutex::new(1)),
             root: root.as_ref().to_path_buf(),
         }
@@ -41,6 +44,7 @@ impl AssetServer {
 
     /// Load an asset synchronously from disk and cache it.
     ///
+    /// pub 
     /// If the asset is already loaded, returns a cloned handle without hitting disk.
     pub fn load<T: Asset>(&self, path: impl AsRef<Path>) -> anyhow::Result<Handle<T>> {
         let path = path.as_ref();
@@ -54,9 +58,16 @@ impl AssetServer {
             }
         }
 
-        // Read bytes
-        let bytes = std::fs::read(&full_path)
-            .map_err(|e| anyhow::anyhow!("Failed to read asset {path:?}: {e}"))?;
+        // Read bytes (check embedded assets first, then fallback to filesystem)
+        let bytes = {
+            let embedded = self.embedded_assets.lock().unwrap();
+            if let Some(data) = embedded.get(path) {
+                data.clone()
+            } else {
+                std::fs::read(&full_path)
+                    .map_err(|e| anyhow::anyhow!("Failed to read asset {path:?}: {e}"))?
+            }
+        };
             
         let ext = path
             .extension()
@@ -107,5 +118,14 @@ impl AssetServer {
 
         self.cache.lock().unwrap().insert(id, asset);
         Handle::new(id)
+    }
+
+    /// Embed an asset's raw bytes into the server. If this path is requested via `load`,
+    /// the server will use these bytes instead of attempting to read from the OS filesystem.
+    pub fn embed_asset(&self, path: impl AsRef<Path>, bytes: Vec<u8>) {
+        self.embedded_assets
+            .lock()
+            .unwrap()
+            .insert(path.as_ref().to_path_buf(), bytes);
     }
 }

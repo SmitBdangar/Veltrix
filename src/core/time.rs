@@ -24,6 +24,8 @@ pub struct Time {
     fps_samples: [f64; 16],
     /// Ring-buffer index for fps_samples.
     fps_index: usize,
+    /// Smoothed delta time to prevent physics jitter.
+    smooth_delta: f64,
 }
 
 impl Default for Time {
@@ -45,6 +47,7 @@ impl Time {
             frame_count: 0,
             fps_samples: [0.0; 16],
             fps_index: 0,
+            smooth_delta: 0.0,
         }
     }
 
@@ -62,23 +65,32 @@ impl Time {
         // Rolling FPS average.
         self.fps_samples[self.fps_index] = raw_dt;
         self.fps_index = (self.fps_index + 1) % self.fps_samples.len();
+        
         let sum: f64 = self.fps_samples.iter().sum();
-        let count = self.fps_samples.len() as f64;
-        self.fps = if sum > 0.0 { count / sum } else { 0.0 };
+        let valid_samples = self.frame_count.min(self.fps_samples.len() as u64) as f64;
+        
+        self.fps = if sum > 0.0 { valid_samples / sum } else { 0.0 };
+        self.smooth_delta = if valid_samples > 0.0 { sum / valid_samples } else { raw_dt };
 
         raw_dt
     }
 
-    /// Seconds elapsed since the last frame.
+    /// Smoothed seconds elapsed since the last frame. Useful for preventing stutter.
     #[inline]
     pub fn delta_seconds(&self) -> f64 {
+        self.smooth_delta
+    }
+
+    /// Raw un-smoothed seconds elapsed since the last frame.
+    #[inline]
+    pub fn delta_seconds_raw(&self) -> f64 {
         self.delta
     }
 
-    /// Seconds elapsed since the last frame as `f32`.
+    /// Smoothed seconds elapsed since the last frame as `f32`.
     #[inline]
     pub fn delta_f32(&self) -> f32 {
-        self.delta as f32
+        self.smooth_delta as f32
     }
 
     /// Total seconds elapsed since the engine started.

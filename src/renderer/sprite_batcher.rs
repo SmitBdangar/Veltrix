@@ -36,18 +36,29 @@ impl VertexInput {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct DrawCall {
+    pub z_index: f32,
+    pub vertices: [VertexInput; 6],
+}
+
 /// Submits sprites for instanced rendering.
 pub struct SpriteBatcher {
-    pub vertices: Vec<VertexInput>,
+    draw_calls: Vec<DrawCall>,
     pub vertex_buffer: Option<wgpu::Buffer>,
 }
 
 impl SpriteBatcher {
     pub fn new() -> Self {
         Self {
-            vertices: Vec::new(),
+            draw_calls: Vec::new(),
             vertex_buffer: None,
         }
+    }
+
+    /// Appends 6 vertices representing a quad, associated with a custom z-index
+    pub fn push_quad(&mut self, vertices: [VertexInput; 6], z_index: f32) {
+        self.draw_calls.push(DrawCall { z_index, vertices });
     }
 
     pub fn draw_sprite(&mut self, sprite: &Sprite, transform: &Transform2D, _z_index: f32) {
@@ -69,26 +80,46 @@ impl SpriteBatcher {
         let col2 = mat.col(2).into();
         let col3 = mat.col(3).into();
 
-        for (pos, uv) in quads {
-            self.vertices.push(VertexInput {
-                position: pos,
-                uv,
+        let mut quad_vertices = [VertexInput {
+            position: [0.0, 0.0],
+            uv: [0.0, 0.0],
+            color: [0.0, 0.0, 0.0, 0.0],
+            transform_col0: [0.0; 4],
+            transform_col1: [0.0; 4],
+            transform_col2: [0.0; 4],
+            transform_col3: [0.0; 4],
+        }; 6];
+
+        for (i, (pos, uv)) in quads.iter().enumerate() {
+            quad_vertices[i] = VertexInput {
+                position: *pos,
+                uv: *uv,
                 color: [sprite.color.r, sprite.color.g, sprite.color.b, sprite.color.a],
                 transform_col0: col0,
                 transform_col1: col1,
                 transform_col2: col2,
                 transform_col3: col3,
-            });
+            };
         }
+
+        self.push_quad(quad_vertices, _z_index);
     }
 
     pub fn flush<'a>(&'a mut self, device: &RenderDevice, render_pass: &mut wgpu::RenderPass<'a>) {
-        if self.vertices.is_empty() {
+        if self.draw_calls.is_empty() {
             return;
         }
 
+        // Sort draw calls by z-index (lowest to highest) for back-to-front rendering
+        self.draw_calls.sort_by(|a, b| a.z_index.partial_cmp(&b.z_index).unwrap_or(std::cmp::Ordering::Equal));
+
+        let mut flattened_vertices = Vec::with_capacity(self.draw_calls.len() * 6);
+        for call in &self.draw_calls {
+            flattened_vertices.extend_from_slice(&call.vertices);
+        }
+
         // Reallocate buffer if it's too small or missing
-        let needed_size = (self.vertices.len() * mem::size_of::<VertexInput>()) as u64;
+        let needed_size = (flattened_vertices.len() * mem::size_of::<VertexInput>()) as u64;
         let mut recreate = false;
         
         if let Some(buf) = &self.vertex_buffer {
@@ -109,11 +140,11 @@ impl SpriteBatcher {
         }
 
         if let Some(buf) = &self.vertex_buffer {
-            device.queue.write_buffer(buf, 0, bytemuck::cast_slice(&self.vertices));
+            device.queue.write_buffer(buf, 0, bytemuck::cast_slice(&flattened_vertices));
             render_pass.set_vertex_buffer(0, buf.slice(0..needed_size));
-            render_pass.draw(0..(self.vertices.len() as u32), 0..1);
+            render_pass.draw(0..(flattened_vertices.len() as u32), 0..1);
         }
 
-        self.vertices.clear();
+        self.draw_calls.clear();
     }
 }

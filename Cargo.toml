@@ -100,6 +100,8 @@ sysinfo = "0.30"
 
 # XML parsing for Tiled .tmx files
 quick-xml = { version = "0.31", features = ["serialize"] }
+lazy_static = "1.5.0"
+ab_glyph = "0.2.32"
 
 [dev-dependencies]
 env_logger = "0.11"

@@ -215,7 +215,10 @@ fn main() -> Result<()> {
 
             // Setup Camera
             let cam = world.spawn();
-            world.insert(cam, Camera2D::new(Vec2::new(800.0, 600.0)));
+            let mut camera = Camera2D::new(Vec2::new(800.0, 600.0));
+            // Ensure the pong demo maintains a fixed 4:3 aspect ratio internally
+            camera.virtual_resolution = Some(Vec2::new(800.0, 600.0)); 
+            world.insert(cam, camera);
             resources.insert(cam);
             resources.insert(InputManager::new());
 
@@ -473,6 +476,7 @@ fn main() -> Result<()> {
             // Pull out our custom rendering states first to avoid double borrowing `resources`
             let mut renderer_state = resources.remove::<PongRenderer>().unwrap();
             let tex_bind = resources.remove::<GlobalTextureBindGroup>().unwrap();
+            let camera_entity = *resources.get::<veltrix::ecs::Entity>().unwrap();
             
             let mut rd = resources.get_mut::<veltrix::renderer::RenderDevice>().unwrap();
             
@@ -492,7 +496,14 @@ fn main() -> Result<()> {
             let mut encoder = rd.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("Render Encoder"),
             });
-            
+            // Pre-calculate camera viewport so we don't borrow `world` mutably while `render_pass` is active
+            let mut vp_rect = (0.0, 0.0, rd.size.width as f32, rd.size.height as f32);
+            if let Some(mut current_cam) = world.get_mut::<Camera2D>(camera_entity) {
+                // Update camera with current physical window size so it can letterbox correctly
+                current_cam.set_viewport(rd.size.width as f32, rd.size.height as f32);
+                vp_rect = current_cam.calculate_viewport_rect();
+            }
+
             { // Render Pass Scope
                 let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                     label: Some("Render Pass"),
@@ -514,6 +525,11 @@ fn main() -> Result<()> {
                     occlusion_query_set: None,
                 });
                 
+                let (vx, vy, vw, vh) = vp_rect;
+                if vw > 0.0 && vh > 0.0 {
+                    render_pass.set_viewport(vx, vy, vw, vh, 0.0, 1.0);
+                }
+
                 // 3. Batch and Draw Sprites
                 // Build the dynamic vertex batch
                 let mut q = QueryMut::<(Transform2D, Sprite)>::new(world);

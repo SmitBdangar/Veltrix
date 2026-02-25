@@ -12,7 +12,9 @@ pub struct Camera2D {
     /// Rotation in radians (CCW).
     pub rotation: f32,
     /// The logical viewport resolution (width, height) we are projecting to.
-    viewport_size: Vec2,
+    pub viewport_size: Vec2,
+    /// The fixed virtual resolution. If set, the camera will letterbox to maintain this aspect ratio.
+    pub virtual_resolution: Option<Vec2>,
 }
 
 impl Default for Camera2D {
@@ -22,6 +24,7 @@ impl Default for Camera2D {
             zoom: 1.0,
             rotation: 0.0,
             viewport_size: Vec2::new(1280.0, 720.0),
+            virtual_resolution: None,
         }
     }
 }
@@ -40,13 +43,38 @@ impl Camera2D {
         self.viewport_size = Vec2::new(width.max(1.0), height.max(1.0));
     }
 
+    /// Calculate the physical viewport rect `(x, y, width, height)` for `wgpu::RenderPass::set_viewport`.
+    pub fn calculate_viewport_rect(&self) -> (f32, f32, f32, f32) {
+        if let Some(target) = self.virtual_resolution {
+            let target_aspect = target.x / target.y;
+            let window_aspect = self.viewport_size.x / self.viewport_size.y;
+            
+            if window_aspect > target_aspect {
+                // Window is wider than target. Pillarbox (bars on left/right)
+                let scale = self.viewport_size.y / target.y;
+                let scaled_width = target.x * scale;
+                let x_offset = (self.viewport_size.x - scaled_width) / 2.0;
+                (x_offset, 0.0, scaled_width, self.viewport_size.y)
+            } else {
+                // Window is taller than target. Letterbox (bars on top/bottom)
+                let scale = self.viewport_size.x / target.x;
+                let scaled_height = target.y * scale;
+                let y_offset = (self.viewport_size.y - scaled_height) / 2.0;
+                (0.0, y_offset, self.viewport_size.x, scaled_height)
+            }
+        } else {
+            (0.0, 0.0, self.viewport_size.x, self.viewport_size.y)
+        }
+    }
+
     /// Calculate the view-projection matrix for the GPU shader.
     ///
     /// Projection: Orthographic projecting `[-half_width, half_width]` to `[-1, 1]`.
     /// View: Translates and rotates the world so the camera is at the origin.
     pub fn view_projection(&self) -> Mat4 {
-        let half_w = self.viewport_size.x * 0.5 / self.zoom;
-        let half_h = self.viewport_size.y * 0.5 / self.zoom;
+        let size = self.virtual_resolution.unwrap_or(self.viewport_size);
+        let half_w = size.x * 0.5 / self.zoom;
+        let half_h = size.y * 0.5 / self.zoom;
 
         // Ortho projection mapping to wgpu coordinate space (y goes UP in NDC, but down in our game world conventionally?
         // We will assume Y goes UP in the world for standard 2D physics.
@@ -67,10 +95,16 @@ impl Camera2D {
 
     /// Convert a screen coordinate (e.g. from mouse) to a world space coordinate.
     pub fn screen_to_world(&self, screen_pos: Vec2) -> Vec2 {
+        let (vx, vy, vw, vh) = self.calculate_viewport_rect();
+        
+        // Adjust screen pos by viewport offset
+        let local_x = screen_pos.x - vx;
+        let local_y = screen_pos.y - vy;
+
         // Normalised device coordinates (NDC): [-1, 1]
-        let ndc_x = (screen_pos.x / self.viewport_size.x) * 2.0 - 1.0;
+        let ndc_x = (local_x / vw) * 2.0 - 1.0;
         // wgpu NDC y is inverted compared to window pixel Y
-        let ndc_y = 1.0 - (screen_pos.y / self.viewport_size.y) * 2.0;
+        let ndc_y = 1.0 - (local_y / vh) * 2.0;
         
         // Un-project
         let inverse_vp = self.view_projection().inverse();

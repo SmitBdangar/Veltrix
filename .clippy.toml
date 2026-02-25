@@ -1,0 +1,11 @@
+# Clippy configuration for Veltrix
+# Docs: https://doc.rust-lang.org/clippy/configuration.html
+
+# Maximum lines allowed in a single function before clippy warns
+too-many-lines-threshold = 80
+
+# Allow large enum variants if the difference is < this many bytes
+enum-variant-size-threshold = 200
+
+# Cognitive complexity threshold before triggering the lint
+cognitive-complexity-threshold = 25

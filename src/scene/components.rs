@@ -4,6 +4,7 @@ use crate::assets::handle::Handle;
 use crate::ecs::world::Entity;
 use crate::math::Rect;
 use crate::renderer::{color::Color, texture::Texture};
+pub use crate::renderer::text::Text;
 use serde::{Deserialize, Serialize};
 
 /// Sets the string label of an entity.
@@ -77,6 +78,54 @@ pub struct AnimatedSprite {
     pub current_frame: usize,
     /// Elapsed fractional frame time.
     pub timer: f32,
+}
+
+/// A single active particle in the world.
+#[derive(Debug, Clone)]
+pub struct Particle {
+    pub position: crate::math::Vec2,
+    pub velocity: crate::math::Vec2,
+    pub lifetime: f32,
+    pub max_lifetime: f32,
+    pub start_color: Color,
+    pub end_color: Color,
+    pub size: crate::math::Vec2,
+}
+
+/// Component that emits particles over time.
+#[derive(Debug, Clone)]
+pub struct ParticleEmitter {
+    /// Particles to emit per second.
+    pub emission_rate: f32,
+    /// Timer accumulating fractional emission.
+    pub emission_timer: f32,
+    /// Initial velocity for spawned particles.
+    pub initial_velocity: crate::math::Vec2,
+    /// Velocity random variance.
+    pub velocity_variance: crate::math::Vec2,
+    /// Starting color.
+    pub start_color: Color,
+    /// Ending color.
+    pub end_color: Color,
+    /// How long particles live.
+    pub lifetime: f32,
+    /// Current active particles. (In a real system, these would be separate ECS entities or a contiguous array).
+    pub particles: Vec<Particle>,
+}
+
+impl ParticleEmitter {
+    pub fn new(rate: f32, lifetime: f32) -> Self {
+        Self {
+            emission_rate: rate,
+            emission_timer: 0.0,
+            initial_velocity: crate::math::Vec2::new(0.0, 50.0),
+            velocity_variance: crate::math::Vec2::new(20.0, 20.0),
+            start_color: Color::WHITE,
+            end_color: Color { r: 1.0, g: 1.0, b: 1.0, a: 0.0 },
+            lifetime,
+            particles: Vec::new(),
+        }
+    }
 }
 
 // ── Built-in Physics Components (rapier wrappers) ────────────────────────────

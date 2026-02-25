@@ -92,4 +92,28 @@ impl RenderDevice {
     pub fn begin_frame(&self) -> Result<wgpu::SurfaceTexture, wgpu::SurfaceError> {
         self.surface.get_current_texture()
     }
+
+    /// Set the window title at runtime.
+    pub fn set_title(&self, title: &str) {
+        self.window.set_title(title);
+    }
+
+    /// Set whether the OS cursor is visible. Useful for custom sprite cursors.
+    pub fn set_cursor_visible(&self, visible: bool) {
+        self.window.set_cursor_visible(visible);
+    }
+
+    /// Set the OS cursor icon (e.g. pointer, text).
+    pub fn set_cursor_icon(&self, icon: winit::window::CursorIcon) {
+        self.window.set_cursor_icon(icon);
+    }
+
+    /// Set the OS window icon from RGBA bytes.
+    pub fn set_window_icon(&self, rgba: Vec<u8>, width: u32, height: u32) {
+        if let Ok(icon) = winit::window::Icon::from_rgba(rgba, width, height) {
+            self.window.set_window_icon(Some(icon));
+        } else {
+            log::warn!("Failed to create window icon from RGBA data.");
+        }
+    }
 }

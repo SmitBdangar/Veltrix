@@ -160,6 +160,8 @@ impl Engine {
         Fixed: FnMut(&mut World, &mut Resources, f64),
         Render: FnMut(&mut World, &mut Resources, f64),
     {
+        // Initialize custom panic hook so we don't crash silently
+        crate::core::error_screen::init_panic_hook();
 
         let event_loop: EventLoop<()> = EventLoop::new()
             .map_err(|e| anyhow::anyhow!("EventLoop creation failed: {e}"))?;
@@ -179,7 +181,11 @@ impl Engine {
         self.resources.insert(render_device);
 
         // Fire on_start before the loop begins.
-        on_start(&mut self.world, &mut self.resources);
+        if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            on_start(&mut self.world, &mut self.resources);
+        })).is_err() {
+            log::error!("Veltrix Panic: on_start panicked!");
+        }
 
         let _should_exit = false;
 
@@ -210,17 +216,62 @@ impl Engine {
                     event: WindowEvent::RedrawRequested,
                     ..
                 } => {
+                    // Check if a system panicked.
+                    if crate::core::error_screen::has_panicked() {
+                        // Enter fallback "Error Screen" mode.
+                        if let Some(mut rd) = self.resources.get_mut::<crate::renderer::device::RenderDevice>() {
+                            if let Ok(output) = rd.begin_frame() {
+                                let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
+                                let mut encoder = rd.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("Panic Encoder") });
+                                {
+                                    let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                                        label: Some("Panic Pass"),
+                                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                                            view: &view,
+                                            resolve_target: None,
+                                            ops: wgpu::Operations {
+                                                // Clear to solid red
+                                                load: wgpu::LoadOp::Clear(wgpu::Color { r: 1.0, g: 0.0, b: 0.0, a: 1.0 }),
+                                                store: wgpu::StoreOp::Store,
+                                            },
+                                        })],
+                                        depth_stencil_attachment: None,
+                                        timestamp_writes: None,
+                                        occlusion_query_set: None,
+                                    });
+                                }
+                                rd.queue.submit(std::iter::once(encoder.finish()));
+                                output.present();
+                            }
+                        }
+                        
+                        // We do not run any further updates or rendering.
+                        // We will just sit on the red error screen so the user can see the crash log in the console.
+                        return;
+                    }
+
                     // ---- Frame start ----
                     let real_dt = self.game_loop.begin_frame();
                     self.time.tick();
 
                     // Fixed-timestep iterations.
                     while self.game_loop.step() {
-                        on_fixed(&mut self.world, &mut self.resources, self.config.fixed_timestep);
+                        if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                            on_fixed(&mut self.world, &mut self.resources, self.config.fixed_timestep);
+                        })).is_err() {
+                            break;
+                        }
                     }
 
                     // Variable-timestep update.
-                    if !on_update(&mut self.world, &mut self.resources, real_dt) {
+                    let mut should_continue = true;
+                    if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        should_continue = on_update(&mut self.world, &mut self.resources, real_dt);
+                    })).is_err() {
+                        should_continue = true; // Keep alive to show red screen
+                    }
+                    
+                    if !should_continue {
                         log::info!("on_update returned false — exiting.");
                         elwt.exit();
                         return;
@@ -228,7 +279,9 @@ impl Engine {
 
                     // Render with interpolation alpha.
                     let alpha = self.game_loop.alpha();
-                    on_render(&mut self.world, &mut self.resources, alpha);
+                    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        on_render(&mut self.world, &mut self.resources, alpha);
+                    }));
 
                     // Flush events after all systems have run.
                     self.event_bus.flush();

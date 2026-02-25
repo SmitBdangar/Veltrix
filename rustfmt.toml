@@ -1,0 +1,21 @@
+# Rustfmt configuration for Veltrix
+# Docs: https://rust-lang.github.io/rustfmt/
+
+edition = "2021"
+
+# Line width — keeps most code readable on normal monitors
+max_width = 100
+
+# Group imports: std first, then external, then crate-local
+imports_granularity = "Crate"
+group_imports = "StdExternalCrate"
+
+# Always use trailing commas in function args and struct fields
+trailing_comma = "Always"
+
+# Normalise doc comments to use ///
+normalize_doc_attributes = true
+
+# Ensure blank lines between major items
+blank_lines_lower_bound = 0
+blank_lines_upper_bound = 1
