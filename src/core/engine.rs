@@ -160,21 +160,26 @@ impl Engine {
         Fixed: FnMut(&mut World, &mut Resources, f64),
         Render: FnMut(&mut World, &mut Resources, f64),
     {
-        // Fire on_start before the loop begins.
-        on_start(&mut self.world, &mut self.resources);
 
         let event_loop: EventLoop<()> = EventLoop::new()
             .map_err(|e| anyhow::anyhow!("EventLoop creation failed: {e}"))?;
         event_loop.set_control_flow(ControlFlow::Poll);
 
-        let window = winit::window::WindowBuilder::new()
+        let window = std::sync::Arc::new(winit::window::WindowBuilder::new()
             .with_title(&self.config.title)
             .with_inner_size(winit::dpi::LogicalSize::new(
                 self.config.width as f64,
                 self.config.height as f64,
             ))
             .build(&event_loop)
-            .map_err(|e| anyhow::anyhow!("Window creation failed: {e}"))?;
+            .map_err(|e| anyhow::anyhow!("Window creation failed: {e}"))?);
+
+        // Initialize Render Backend
+        let render_device = crate::renderer::device::RenderDevice::new(window.clone());
+        self.resources.insert(render_device);
+
+        // Fire on_start before the loop begins.
+        on_start(&mut self.world, &mut self.resources);
 
         let _should_exit = false;
 
@@ -189,10 +194,12 @@ impl Engine {
                 }
 
                 Event::WindowEvent {
-                    event: WindowEvent::Resized(_),
+                    event: WindowEvent::Resized(physical_size),
                     ..
                 } => {
-                    // Resize handled by WindowManager / RenderDevice externally.
+                    if let Some(mut rd) = self.resources.get_mut::<crate::renderer::device::RenderDevice>() {
+                        rd.resize(physical_size);
+                    }
                 }
 
                 Event::AboutToWait => {

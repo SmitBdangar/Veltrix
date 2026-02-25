@@ -56,7 +56,7 @@ impl TilemapRenderer {
                             );
 
                             let sprite = Sprite {
-                                texture: *texture,
+                                texture: Some(*texture),
                                 color: Color::WHITE,
                                 flip_x: false,
                                 flip_y: false,

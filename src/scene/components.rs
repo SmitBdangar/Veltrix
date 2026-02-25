@@ -39,8 +39,8 @@ pub struct Children(pub Vec<Entity>);
 /// Renders a static texture sprite.
 #[derive(Debug)]
 pub struct Sprite {
-    /// Texture asset handle.
-    pub texture: Handle<Texture>,
+    /// Texture asset handle. Optional for solid colored quads.
+    pub texture: Option<Handle<Texture>>,
     /// Color tint applied over the texture.
     pub color: Color,
     /// Whether to flip horizontally.
@@ -55,7 +55,7 @@ impl Sprite {
     /// Create a new sprite wrapping a texture handle.
     pub fn new(texture: Handle<Texture>) -> Self {
         Self {
-            texture,
+            texture: Some(texture),
             color: Color::WHITE,
             flip_x: false,
             flip_y: false,

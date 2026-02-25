@@ -1,0 +1,126 @@
+    Checking veltrix v0.1.0 (C:\Users\Admin\github\Veltrix)
+warning: unused import: `wgpu::util::DeviceExt`
+ --> src\renderer\sprite_batcher.rs:6:5
+  |
+6 | use wgpu::util::DeviceExt;
+  |     ^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: ambiguous glob re-exports
+  --> src\lib.rs:53:13
+   |
+53 |     pub use crate::animation::*;
+   |             ^^^^^^^^^^^^^^^^^^^ the name `clip` in the type namespace is first re-exported here
+54 |     pub use crate::assets::*;
+55 |     pub use crate::audio::*;
+   |             --------------- but the name `clip` in the type namespace is also re-exported here
+   |
+   = note: `#[warn(ambiguous_glob_reexports)]` on by default
+
+warning: ambiguous glob re-exports
+  --> src\lib.rs:54:13
+   |
+54 |     pub use crate::assets::*;
+   |             ^^^^^^^^^^^^^^^^ the name `loader` in the type namespace is first re-exported here
+...
+65 |     pub use crate::scene::*;
+   |             --------------- but the name `loader` in the type namespace is also re-exported here
+
+warning: ambiguous glob re-exports
+  --> src\lib.rs:55:13
+   |
+55 |     pub use crate::audio::*;
+   |             ^^^^^^^^^^^^^^^ the name `manager` in the type namespace is first re-exported here
+...
+70 |     pub use crate::window::*;
+   |             ---------------- but the name `manager` in the type namespace is also re-exported here
+
+warning: ambiguous glob re-exports
+  --> src\lib.rs:58:13
+   |
+58 |     pub use crate::debug::*;
+   |             ^^^^^^^^^^^^^^^ the name `renderer` in the type namespace is first re-exported here
+...
+68 |     pub use crate::tilemap::*;
+   |             ----------------- but the name `renderer` in the type namespace is also re-exported here
+
+warning: ambiguous glob re-exports
+  --> src\lib.rs:59:13
+   |
+59 |     pub use crate::ecs::*;
+   |             ^^^^^^^^^^^^^ the name `world` in the type namespace is first re-exported here
+...
+62 |     pub use crate::physics::*;
+   |             ----------------- but the name `world` in the type namespace is also re-exported here
+
+error[E0609]: no field `tint` on type `&Sprite`
+  --> src\renderer\sprite_batcher.rs:76:32
+   |
+76 |                 color: [sprite.tint.r, sprite.tint.g, sprite.tint.b, sprite.tint.a],
+   |                                ^^^^ unknown field
+   |
+   = note: available fields are: `texture`, `color`, `flip_x`, `flip_y`, `src_rect`
+
+error[E0609]: no field `tint` on type `&Sprite`
+  --> src\renderer\sprite_batcher.rs:76:47
+   |
+76 |                 color: [sprite.tint.r, sprite.tint.g, sprite.tint.b, sprite.tint.a],
+   |                                               ^^^^ unknown field
+   |
+   = note: available fields are: `texture`, `color`, `flip_x`, `flip_y`, `src_rect`
+
+error[E0609]: no field `tint` on type `&Sprite`
+  --> src\renderer\sprite_batcher.rs:76:62
+   |
+76 |                 color: [sprite.tint.r, sprite.tint.g, sprite.tint.b, sprite.tint.a],
+   |                                                              ^^^^ unknown field
+   |
+   = note: available fields are: `texture`, `color`, `flip_x`, `flip_y`, `src_rect`
+
+error[E0609]: no field `tint` on type `&Sprite`
+  --> src\renderer\sprite_batcher.rs:76:77
+   |
+76 |                 color: [sprite.tint.r, sprite.tint.g, sprite.tint.b, sprite.tint.a],
+   |                                                                             ^^^^ unknown field
+   |
+   = note: available fields are: `texture`, `color`, `flip_x`, `flip_y`, `src_rect`
+
+warning: unused import: `slotmap::Key`
+ --> src\ecs\storage.rs:5:5
+  |
+5 | use slotmap::Key;
+  |     ^^^^^^^^^^^^
+
+warning: variable does not need to be mutable
+   --> src\core\engine.rs:199:33
+    |
+199 |                     if let Some(mut rd) = self.resources.get_mut::<crate::renderer::device::RenderDevice>() {
+    |                                 ----^^
+    |                                 |
+    |                                 help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+error: lifetime may not live long enough
+   --> src\renderer\sprite_batcher.rs:113:13
+    |
+ 85 |     pub fn flush(&mut self, device: &RenderDevice, render_pass: &mut wgpu::RenderPass) {
+    |                  -                                 ----------- has type `&mut wgpu::RenderPass<'2>`
+    |                  |
+    |                  let's call the lifetime of this reference `'1`
+...
+113 |             render_pass.set_vertex_buffer(0, buf.slice(0..needed_size));
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ argument requires that `'1` must outlive `'2`
+    |
+    = note: requirement occurs because of a mutable reference to `wgpu::RenderPass<'_>`
+    = note: mutable references are invariant over their type parameter
+    = help: see <https://doc.rust-lang.org/nomicon/subtyping.html> for more information about variance
+help: consider introducing a named lifetime parameter and update trait if needed
+    |
+ 85 |     pub fn flush<'a>(&'a mut self, device: &RenderDevice, render_pass: &mut wgpu::RenderPass<'a>) {
+    |                 ++++  ++                                                                    ++++
+
+For more information about this error, try `rustc --explain E0609`.
+warning: `veltrix` (lib) generated 8 warnings
+error: could not compile `veltrix` (lib) due to 5 previous errors; 8 warnings emitted

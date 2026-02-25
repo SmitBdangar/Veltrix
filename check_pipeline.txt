@@ -1,12 +1,4 @@
     Checking veltrix v0.1.0 (C:\Users\Admin\github\Veltrix)
-warning: unused import: `wgpu::util::DeviceExt`
- --> src\renderer\sprite_batcher.rs:6:5
-  |
-6 | use wgpu::util::DeviceExt;
-  |     ^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
-
 warning: ambiguous glob re-exports
   --> src\lib.rs:53:13
    |
@@ -54,24 +46,37 @@ warning: ambiguous glob re-exports
 62 |     pub use crate::physics::*;
    |             ----------------- but the name `world` in the type namespace is also re-exported here
 
-error[E0308]: mismatched types
-  --> src\tilemap\renderer.rs:59:42
+error[E0560]: struct `wgpu::VertexState<'_>` has no field named `compilation_options`
+  --> src\renderer\pipeline.rs:31:17
    |
-59 | ...                   texture: *texture,
-   |                                ^^^^^^^^ expected `Option<Handle<Texture>>`, found `Handle<Texture>`
+31 |                 compilation_options: Default::default(),
+   |                 ^^^^^^^^^^^^^^^^^^^ `wgpu::VertexState<'_>` does not have this field
    |
-   = note: expected enum `std::option::Option<handle::Handle<_>>`
-            found struct `handle::Handle<_>`
-help: try wrapping the expression in `Some`
+   = note: all struct fields are already assigned
+
+error[E0560]: struct `wgpu::FragmentState<'_>` has no field named `compilation_options`
+  --> src\renderer\pipeline.rs:41:17
    |
-59 |                                 texture: Some(*texture),
-   |                                          +++++        +
+41 |                 compilation_options: Default::default(),
+   |                 ^^^^^^^^^^^^^^^^^^^ `wgpu::FragmentState<'_>` does not have this field
+   |
+   = note: all struct fields are already assigned
+
+error[E0560]: struct `wgpu::RenderPipelineDescriptor<'_>` has no field named `cache`
+  --> src\renderer\pipeline.rs:56:13
+   |
+56 |             cache: None,
+   |             ^^^^^ `wgpu::RenderPipelineDescriptor<'_>` does not have this field
+   |
+   = note: all struct fields are already assigned
 
 warning: unused import: `slotmap::Key`
  --> src\ecs\storage.rs:5:5
   |
 5 | use slotmap::Key;
   |     ^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
 
 warning: variable does not need to be mutable
    --> src\core\engine.rs:199:33
@@ -83,6 +88,6 @@ warning: variable does not need to be mutable
     |
     = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
 
-For more information about this error, try `rustc --explain E0308`.
-warning: `veltrix` (lib) generated 8 warnings
-error: could not compile `veltrix` (lib) due to 1 previous error; 8 warnings emitted
+For more information about this error, try `rustc --explain E0560`.
+warning: `veltrix` (lib) generated 7 warnings
+error: could not compile `veltrix` (lib) due to 3 previous errors; 7 warnings emitted

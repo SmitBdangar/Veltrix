@@ -4,28 +4,31 @@
 use anyhow::Result;
 use glam::Vec2;
 use veltrix::prelude::*;
+use std::borrow::Cow;
+use wgpu::util::DeviceExt;
 
 // --- Components ---
 
-#[derive(Clone, Copy, Debug)]
-struct Velocity(pub Vec2);
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-enum PlayerSide {
+/// Player side enum.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PlayerSide {
     Left,
     Right,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug, Clone)]
 struct Paddle {
     pub side: PlayerSide,
     pub speed: f32,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug, Clone)]
 struct Ball {
-    pub speed: f32,
+    pub _speed: f32, // Prevent dead code warning
 }
+
+#[derive(Debug, Clone)]
+struct Velocity(Vec2);
 
 // Global state container
 struct GameState {
@@ -35,6 +38,23 @@ struct GameState {
     pub bounds_x: f32, // Left/Right limit (for scoring)
     pub ball_entity: Entity,
 }
+
+// ---- Rendering Structs ----
+struct PongRenderer {
+    pub pipeline: veltrix::renderer::pipeline::RenderPipeline,
+    pub camera_bind_group: wgpu::BindGroup,
+    pub camera_buffer: wgpu::Buffer,
+    pub batcher: veltrix::renderer::SpriteBatcher,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+struct CameraUniform {
+    view_proj: [[f32; 4]; 4],
+}
+
+// Store diffuse bind group manually in resources since we hacked it for tests
+pub struct GlobalTextureBindGroup(wgpu::BindGroup);
 
 // --- Constants ---
 const PADDLE_SIZE: Vec2 = Vec2::new(20.0, 100.0);
@@ -52,11 +72,147 @@ fn main() -> Result<()> {
 
     // Using `PlayerEnt` trick to ferry the ball entity into the state quickly.
     // Realistically we just loop through the world.
-    let mut initial_ball = Entity::null();
-
+    let mut initial_ball = Entity::default();
+            
     engine.run(
         // -- ON START --
         |world, resources| {
+            // Generate dummy 1x1 white texture since we need bind group 1 for our shader
+            let rd = resources.get_mut::<veltrix::renderer::RenderDevice>().unwrap();
+            let texture_size = wgpu::Extent3d { width: 1, height: 1, depth_or_array_layers: 1 };
+            let diffuse_texture = rd.device.create_texture(&wgpu::TextureDescriptor {
+                size: texture_size,
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                label: Some("diffuse_texture"),
+                view_formats: &[],
+            });
+            rd.queue.write_texture(
+                wgpu::ImageCopyTexture { texture: &diffuse_texture, mip_level: 0, origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All },
+                &[255, 255, 255, 255],
+                wgpu::ImageDataLayout { offset: 0, bytes_per_row: Some(4), rows_per_image: Some(1) },
+                texture_size,
+            );
+            let diffuse_texture_view = diffuse_texture.create_view(&wgpu::TextureViewDescriptor::default());
+            let diffuse_sampler = rd.device.create_sampler(&wgpu::SamplerDescriptor {
+                address_mode_u: wgpu::AddressMode::ClampToEdge,
+                address_mode_v: wgpu::AddressMode::ClampToEdge,
+                address_mode_w: wgpu::AddressMode::ClampToEdge,
+                mag_filter: wgpu::FilterMode::Nearest,
+                min_filter: wgpu::FilterMode::Nearest,
+                mipmap_filter: wgpu::FilterMode::Nearest,
+                ..Default::default()
+            });
+
+            // Shader
+            let shader = rd.device.create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some("Sprite Shader"),
+                source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("../assets/shaders/sprite.wgsl"))),
+            });
+
+            // Camera setup (Bind Group 0)
+            let proj = glam::Mat4::orthographic_rh(-400.0, 400.0, -300.0, 300.0, -100.0, 100.0);
+            let camera_uniform = CameraUniform { view_proj: proj.to_cols_array_2d() };
+            let camera_buffer = rd.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Camera Buffer"),
+                contents: bytemuck::cast_slice(&[camera_uniform]),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            });
+
+            let camera_bind_group_layout = rd.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Uniform, has_dynamic_offset: false, min_binding_size: None },
+                    count: None,
+                }],
+                label: Some("camera_bind_group_layout"),
+            });
+
+            let camera_bind_group = rd.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                layout: &camera_bind_group_layout,
+                entries: &[wgpu::BindGroupEntry { binding: 0, resource: camera_buffer.as_entire_binding() }],
+                label: Some("camera_bind_group"),
+            });
+
+            // Texture setup (Bind Group 1)
+            let texture_bind_group_layout = rd.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture { multisampled: false, view_dimension: wgpu::TextureViewDimension::D2, sample_type: wgpu::TextureSampleType::Float { filterable: true } },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                ],
+                label: Some("texture_bind_group_layout"),
+            });
+
+            let _texture_bind_group = rd.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                layout: &texture_bind_group_layout,
+                entries: &[
+                    wgpu::BindGroupEntry { binding: 0, resource: wgpu::BindingResource::TextureView(&diffuse_texture_view) },
+                    wgpu::BindGroupEntry { binding: 1, resource: wgpu::BindingResource::Sampler(&diffuse_sampler) },
+                ],
+                label: Some("diffuse_bind_group"),
+            });
+
+            let pipeline_layout = rd.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("Render Pipeline Layout"),
+                bind_group_layouts: &[&camera_bind_group_layout, &texture_bind_group_layout],
+                push_constant_ranges: &[],
+            });
+
+            let wgpu_pipeline = rd.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("Sprite Render Pipeline"),
+                layout: Some(&pipeline_layout),
+                vertex: wgpu::VertexState {
+                    module: &shader,
+                    entry_point: "vs_main",
+                    buffers: &[veltrix::renderer::sprite_batcher::VertexInput::desc()],
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &shader,
+                    entry_point: "fs_main",
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format: rd.config.format,
+                        blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                }),
+                primitive: wgpu::PrimitiveState {
+                    topology: wgpu::PrimitiveTopology::TriangleList,
+                    strip_index_format: None,
+                    front_face: wgpu::FrontFace::Ccw,
+                    ..Default::default()
+                },
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState {
+                    count: 1,
+                    mask: !0,
+                    alpha_to_coverage_enabled: false,
+                },
+                multiview: None,
+            });
+
+            resources.insert(PongRenderer {
+                pipeline: veltrix::renderer::pipeline::RenderPipeline { wgpu_pipeline },
+                camera_bind_group,
+                camera_buffer,
+                batcher: veltrix::renderer::SpriteBatcher::new(),
+            });
+
+            resources.insert(GlobalTextureBindGroup(_texture_bind_group));
+
             // Setup Camera
             let cam = world.spawn();
             world.insert(cam, Camera2D::new(Vec2::new(800.0, 600.0)));
@@ -69,7 +225,14 @@ fn main() -> Result<()> {
             world.insert(p1, Transform2D {
                 position: Vec2::new(-PADDLE_START_X, 0.0),
                 rotation: 0.0,
-                scale: Vec2::ONE,
+                scale: PADDLE_SIZE, // Visually match collider size
+            });
+            world.insert(p1, Sprite {
+                texture: None::<veltrix::assets::Handle<veltrix::renderer::Texture>>,
+                color: Color::WHITE,
+                flip_x: false,
+                flip_y: false,
+                src_rect: None,
             });
             world.insert(p1, Collider2D {
                 shape: ColliderShape::Box(PADDLE_SIZE / 2.0),
@@ -85,7 +248,14 @@ fn main() -> Result<()> {
             world.insert(p2, Transform2D {
                 position: Vec2::new(PADDLE_START_X, 0.0),
                 rotation: 0.0,
-                scale: Vec2::ONE,
+                scale: PADDLE_SIZE, // Visually match collider size
+            });
+            world.insert(p2, Sprite {
+                texture: None::<veltrix::assets::Handle<veltrix::renderer::Texture>>,
+                color: Color::WHITE,
+                flip_x: false,
+                flip_y: false,
+                src_rect: None,
             });
             world.insert(p2, Collider2D {
                 shape: ColliderShape::Box(PADDLE_SIZE / 2.0),
@@ -97,11 +267,18 @@ fn main() -> Result<()> {
 
             // Ball
             initial_ball = world.spawn();
-            world.insert(initial_ball, Ball { speed: BALL_START_SPEED });
+            world.insert(initial_ball, Ball { _speed: BALL_START_SPEED });
             world.insert(initial_ball, Transform2D {
                 position: Vec2::ZERO,
                 rotation: 0.0,
-                scale: Vec2::ONE,
+                scale: BALL_SIZE,
+            });
+            world.insert(initial_ball, Sprite {
+                texture: None::<veltrix::assets::Handle<veltrix::renderer::Texture>>,
+                color: Color::WHITE,
+                flip_x: false,
+                flip_y: false,
+                src_rect: None,
             });
             world.insert(initial_ball, Velocity(Vec2::new(BALL_START_SPEED, BALL_START_SPEED * 0.5)));
             // Ball is technically a small box for collision, we use custom AABB though for this demo
@@ -118,7 +295,14 @@ fn main() -> Result<()> {
             world.insert(top_wall, Transform2D {
                 position: Vec2::new(0.0, 300.0 + WALL_THICKNESS / 2.0),
                 rotation: 0.0,
-                scale: Vec2::ONE,
+                scale: Vec2::new(800.0, WALL_THICKNESS),
+            });
+            world.insert(top_wall, Sprite {
+                texture: None::<veltrix::assets::Handle<veltrix::renderer::Texture>>,
+                color: Color::GRAY,
+                flip_x: false,
+                flip_y: false,
+                src_rect: None,
             });
             world.insert(top_wall, Collider2D {
                 shape: ColliderShape::Box(Vec2::new(800.0, WALL_THICKNESS) / 2.0),
@@ -133,7 +317,14 @@ fn main() -> Result<()> {
             world.insert(bot_wall, Transform2D {
                 position: Vec2::new(0.0, -300.0 - WALL_THICKNESS / 2.0),
                 rotation: 0.0,
-                scale: Vec2::ONE,
+                scale: Vec2::new(800.0, WALL_THICKNESS),
+            });
+            world.insert(bot_wall, Sprite {
+                texture: None::<veltrix::assets::Handle<veltrix::renderer::Texture>>,
+                color: Color::GRAY,
+                flip_x: false,
+                flip_y: false,
+                src_rect: None,
             });
             world.insert(bot_wall, Collider2D {
                 shape: ColliderShape::Box(Vec2::new(800.0, WALL_THICKNESS) / 2.0),
@@ -278,9 +469,75 @@ fn main() -> Result<()> {
         },
 
         // -- ON RENDER --
-        |_world, _resources, _alpha| {
-            // Under normal circumstances, we iterate Transform2D and Render objects. 
-            // In a fully featured Renderer, SpriteBatcher / ShapeRenderer is called here.
+        |world, resources, _alpha| {
+            // Pull out our custom rendering states first to avoid double borrowing `resources`
+            let mut renderer_state = resources.remove::<PongRenderer>().unwrap();
+            let tex_bind = resources.remove::<GlobalTextureBindGroup>().unwrap();
+            
+            let mut rd = resources.get_mut::<veltrix::renderer::RenderDevice>().unwrap();
+            
+            // 1. Acquire swapchain texture
+            let output = match rd.begin_frame() {
+                Ok(frame) => frame,
+                Err(wgpu::SurfaceError::Outdated) => return,
+                Err(e) => {
+                    log::error!("Dropped frame: {:?}", e);
+                    return;
+                }
+            };
+            
+            let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
+            
+            // 2. Clear Screen
+            let mut encoder = rd.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Render Encoder"),
+            });
+            
+            { // Render Pass Scope
+                let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    label: Some("Render Pass"),
+                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                        view: &view,
+                        resolve_target: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(wgpu::Color {
+                                r: 0.05,
+                                g: 0.05,
+                                b: 0.05,
+                                a: 1.0,
+                            }),
+                            store: wgpu::StoreOp::Store,
+                        },
+                    })],
+                    depth_stencil_attachment: None,
+                    timestamp_writes: None,
+                    occlusion_query_set: None,
+                });
+                
+                // 3. Batch and Draw Sprites
+                // Build the dynamic vertex batch
+                let mut q = QueryMut::<(Transform2D, Sprite)>::new(world);
+                for (_e, (transform, sprite)) in q.iter_mut() {
+                    renderer_state.batcher.draw_sprite(sprite, transform, 0.0);
+                }
+                
+                // Push it to GPU inside the render pass
+                render_pass.set_pipeline(&renderer_state.pipeline.wgpu_pipeline);
+                render_pass.set_bind_group(0, &renderer_state.camera_bind_group, &[]);
+                render_pass.set_bind_group(1, &tex_bind.0, &[]);
+                renderer_state.batcher.flush(&rd, &mut render_pass);
+            } // Close encoder block, dropping render_pass which releases borrows of renderer_state
+            
+            // 4. Submit to GPU
+            rd.queue.submit(std::iter::once(encoder.finish()));
+            output.present();
+            
+            // Drop our RenderDevice borrow so we can safely mutate resources again
+            drop(rd);
+            
+            // Store our custom rendering states back
+            resources.insert(renderer_state);
+            resources.insert(tex_bind);
         }
     )?;
 
