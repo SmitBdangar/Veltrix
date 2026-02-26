@@ -12,6 +12,13 @@ categories = ["game-engines", "rendering", "multimedia"]
 name = "veltrix"
 path = "src/lib.rs"
 
+[package.metadata.bundle]
+name = "Veltrix Engine"
+identifier = "com.veltrix.engine"
+icon = ["assets/icon.png"]
+version = "0.1.0"
+copyright = "Copyright (c) 2026"
+
 [[example]]
 name = "hello_window"
 path = "examples/hello_window.rs"
