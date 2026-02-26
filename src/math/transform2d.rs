@@ -14,6 +14,9 @@ pub struct Transform2D {
     pub rotation: f32,
     /// Scale factor. `(1, 1)` is identity.
     pub scale: Vec2,
+    /// Dirty flag — set to `true` when any field changes.
+    /// Systems can check this to avoid redundant GPU uploads.
+    pub dirty: bool,
 }
 
 impl Default for Transform2D {
@@ -28,21 +31,22 @@ impl Transform2D {
         position: Vec2::ZERO,
         rotation: 0.0,
         scale: Vec2::ONE,
+        dirty: true,
     };
 
     /// Construct a transform with the given position, zero rotation, and unit scale.
     pub fn from_position(position: Vec2) -> Self {
-        Self { position, ..Self::IDENTITY }
+        Self { position, dirty: true, ..Self::IDENTITY }
     }
 
     /// Construct a transform with given position and rotation.
     pub fn from_position_rotation(position: Vec2, rotation: f32) -> Self {
-        Self { position, rotation, scale: Vec2::ONE }
+        Self { position, rotation, scale: Vec2::ONE, dirty: true }
     }
 
     /// Construct a full transform.
     pub fn new(position: Vec2, rotation: f32, scale: Vec2) -> Self {
-        Self { position, rotation, scale }
+        Self { position, rotation, scale, dirty: true }
     }
 
     /// Convert to a 3×3 affine matrix (suitable for 2D computation).
@@ -72,11 +76,13 @@ impl Transform2D {
     /// Translate by a world-space offset.
     pub fn translate(&mut self, offset: Vec2) {
         self.position += offset;
+        self.dirty = true;
     }
 
     /// Rotate by `delta` radians.
     pub fn rotate(&mut self, delta: f32) {
         self.rotation += delta;
+        self.dirty = true;
     }
 
     /// Linearly interpolate toward `other` by factor `t ∈ [0, 1]`.
@@ -85,7 +91,18 @@ impl Transform2D {
             position: self.position.lerp(other.position, t),
             rotation: self.rotation + (other.rotation - self.rotation) * t,
             scale: self.scale.lerp(other.scale, t),
+            dirty: true,
         }
+    }
+
+    /// Mark this transform as clean (call after uploading to GPU).
+    pub fn mark_clean(&mut self) {
+        self.dirty = false;
+    }
+
+    /// Returns `true` if the transform has been modified since last `mark_clean()`.
+    pub fn is_dirty(&self) -> bool {
+        self.dirty
     }
 }
 

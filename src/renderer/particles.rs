@@ -13,8 +13,8 @@ impl ParticleSystem {
         // In our ECS, we fetch the entities first.
         let mut active_emitters = Vec::new();
         {
-            let mut q = crate::ecs::query::QueryMut::<ParticleEmitter>::new(world);
-            for (entity, _) in q.iter_mut() {
+            let q = crate::ecs::query::Query::<&ParticleEmitter>::new(world);
+            for (entity, _) in &mut q.iter() {
                 active_emitters.push(entity);
             }
         }
@@ -40,7 +40,7 @@ impl ParticleSystem {
                             emitter.initial_velocity.y + rand_y * emitter.velocity_variance.y,
                         );
                         
-                        emitter.particles.push(crate::scene::components::Particle {
+                        let p = crate::scene::components::Particle {
                             position: Vec2::ZERO,
                             velocity: vel,
                             lifetime: emitter.lifetime,
@@ -48,7 +48,8 @@ impl ParticleSystem {
                             start_color: emitter.start_color,
                             end_color: emitter.end_color,
                             size: Vec2::new(10.0, 10.0), // fixed size for now
-                        });
+                        };
+                        emitter.particles.push(p);
                     }
                 }
                 
@@ -71,8 +72,8 @@ impl ParticleSystem {
         // Collect emitters first to respect borrowing rules
         let mut active_entities = Vec::new();
         {
-            let q = crate::ecs::query::Query::<ParticleEmitter>::new(world);
-            for (entity, _) in q.iter() {
+            let mut q = crate::ecs::query::Query::<&ParticleEmitter>::new(world);
+            for (entity, _) in &mut q.iter() {
                 active_entities.push(entity);
             }
         }

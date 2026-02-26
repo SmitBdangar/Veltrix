@@ -23,7 +23,7 @@ pub fn sync_physics_to_transforms(world: &mut World, physics: &PhysicsWorld) {
                 let pos = physics_body.translation();
                 let rot = physics_body.rotation();
 
-                if let Some(transform) = world.get_mut::<Transform2D>(entity) {
+                if let Some(mut transform) = world.get_mut::<Transform2D>(entity) {
                     transform.position.x = pos.x;
                     transform.position.y = pos.y;
                     transform.rotation = rot.angle();

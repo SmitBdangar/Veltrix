@@ -5,6 +5,7 @@
 use anyhow::Result;
 use glam::Vec2;
 use veltrix::prelude::*;
+use veltrix::ecs::world::EntityExt;
 
 fn main() -> Result<()> {
     // 1. Configure the engine
@@ -46,6 +47,7 @@ fn main() -> Result<()> {
                 position: Vec2::new(0.0, 100.0),
                 rotation: 0.0,
                 scale: Vec2::ONE,
+                dirty: true,
             });
 
             // Physics RigidBody
@@ -91,7 +93,7 @@ fn main() -> Result<()> {
                 if input.keyboard.just_pressed(KeyCode::Space) {
                     // Start screen shake
                     let cam_ent = *resources.get::<Entity>().unwrap();
-                    if let Some(shake) = world.get_mut::<CameraShake>(cam_ent) {
+                    if let Some(mut shake) = world.get_mut::<CameraShake>(cam_ent) {
                         shake.add_trauma(0.8);
                     }
                 }
@@ -99,7 +101,7 @@ fn main() -> Result<()> {
 
             // Update Animations
             let dt_f32 = dt as f32;
-            let mut query = QueryMut::<AnimationController>::new(world);
+            let mut query = QueryMut::<&mut AnimationController>::new(world);
             // In a real framework, we'd join QueryMut with `AnimatedSprite`
             for (_e, _ctrl) in query.iter_mut() {
                 // AnimationController::update_sprite(...) 
@@ -107,9 +109,9 @@ fn main() -> Result<()> {
 
             // Update Camera Shake
             let cam_ent = *resources.get::<Entity>().unwrap();
-            if let Some(shake) = world.get_mut::<CameraShake>(cam_ent) {
+            if let Some(mut shake) = world.get_mut::<CameraShake>(cam_ent) {
                 let (offset, _rot) = shake.update(dt_f32);
-                if let Some(cam_transform) = world.get_mut::<Transform2D>(cam_ent) {
+                if let Some(mut cam_transform) = world.get_mut::<Transform2D>(cam_ent) {
                     cam_transform.position += offset;
                 }
             }

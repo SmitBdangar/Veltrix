@@ -32,6 +32,7 @@ struct PlayerEnt(Entity);
                     position: Vec2::ZERO,
                     rotation: 0.0,
                     scale: Vec2::ONE,
+                    dirty: true,
                 },
             );
             
@@ -60,7 +61,7 @@ struct PlayerEnt(Entity);
 
             if move_dir.length_squared() > 0.0 {
                 move_dir = move_dir.normalize();
-                if let Some(transform) = world.get_mut::<Transform2D>(player_entity) {
+                if let Some(mut transform) = world.get_mut::<Transform2D>(player_entity) {
                     let speed = 200.0;
                     transform.position += move_dir * speed * dt as f32;
                 }

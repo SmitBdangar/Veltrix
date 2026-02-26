@@ -112,6 +112,32 @@ impl Camera2D {
         
         Vec2::new(world_homo.x, world_homo.y)
     }
+    /// Returns the axis-aligned visible region `(min_x, min_y, max_x, max_y)` in world space.
+    ///
+    /// Use this for **frustum culling** — skip any entity whose bounding box
+    /// does not overlap this rectangle.
+    pub fn visible_bounds(&self) -> (f32, f32, f32, f32) {
+        let size = self.virtual_resolution.unwrap_or(self.viewport_size);
+        let half_w = size.x * 0.5 / self.zoom;
+        let half_h = size.y * 0.5 / self.zoom;
+
+        (
+            self.position.x - half_w,
+            self.position.y - half_h,
+            self.position.x + half_w,
+            self.position.y + half_h,
+        )
+    }
+
+    /// Quick frustum-cull check: returns `true` if a point is within the camera’s
+    /// visible area (with an optional `margin` in world units for safety).
+    pub fn is_visible(&self, world_pos: Vec2, margin: f32) -> bool {
+        let (min_x, min_y, max_x, max_y) = self.visible_bounds();
+        world_pos.x >= min_x - margin
+            && world_pos.x <= max_x + margin
+            && world_pos.y >= min_y - margin
+            && world_pos.y <= max_y + margin
+    }
 }
 
 #[cfg(test)]

@@ -2639,8 +2639,10 @@ dependencies = [
  "num-derive 0.3.3",
  "num-traits",
  "parry2d",
+ "rayon",
  "rustc-hash 1.1.0",
  "simba",
+ "vec_map",
 ]
 
 [[package]]
@@ -3456,6 +3458,7 @@ dependencies = [
  "quick-xml 0.31.0",
  "rand",
  "rapier2d",
+ "rayon",
  "rodio",
  "ron",
  "serde",

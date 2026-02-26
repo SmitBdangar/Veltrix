@@ -42,10 +42,10 @@ pub struct DrawCall {
     pub vertices: [VertexInput; 6],
 }
 
-/// Submits sprites for instanced rendering.
 pub struct SpriteBatcher {
     draw_calls: Vec<DrawCall>,
     pub vertex_buffer: Option<wgpu::Buffer>,
+    pub last_vertex_count: usize,
 }
 
 impl SpriteBatcher {
@@ -53,6 +53,7 @@ impl SpriteBatcher {
         Self {
             draw_calls: Vec::new(),
             vertex_buffer: None,
+            last_vertex_count: 0,
         }
     }
 
@@ -61,7 +62,31 @@ impl SpriteBatcher {
         self.draw_calls.push(DrawCall { z_index, vertices });
     }
 
-    pub fn draw_sprite(&mut self, sprite: &Sprite, transform: &Transform2D, _z_index: f32) {
+    pub fn draw_sprite(
+        &mut self,
+        sprite: &Sprite,
+        transform: &Transform2D,
+        _z_index: f32,
+        cull_bounds: Option<&crate::math::Rect>,
+    ) {
+        // Frustum culling
+        if let Some(bounds) = cull_bounds {
+            let scale_max = transform.scale.x.max(transform.scale.y).max(1.0);
+            // Default sprite size in shaders is 1x1, but actual size might be driven by scale or src_rect
+            let width = sprite.src_rect.map_or(scale_max, |r| r.max.x - r.min.x);
+            let height = sprite.src_rect.map_or(scale_max, |r| r.max.y - r.min.y);
+            let margin = width.max(height);
+            
+            let sprite_rect = crate::math::Rect::new(
+                transform.position - glam::Vec2::splat(margin * 0.5),
+                glam::Vec2::new(width, height)
+            );
+            
+            if !bounds.intersects(&sprite_rect) {
+                return; // Culled out
+            }
+        }
+
         let mat = transform.to_mat4();
 
         // Standard quad spanning [-0.5, 0.5]
@@ -106,43 +131,60 @@ impl SpriteBatcher {
     }
 
     pub fn flush<'a>(&'a mut self, device: &RenderDevice, render_pass: &mut wgpu::RenderPass<'a>) {
-        if self.draw_calls.is_empty() {
+        self.flush_with_dirty(device, render_pass, true);
+    }
+
+    pub fn flush_with_dirty<'a>(&'a mut self, device: &RenderDevice, render_pass: &mut wgpu::RenderPass<'a>, is_dirty: bool) {
+        if self.draw_calls.is_empty() && self.last_vertex_count == 0 {
             return;
         }
 
-        // Sort draw calls by z-index (lowest to highest) for back-to-front rendering
-        self.draw_calls.sort_by(|a, b| a.z_index.partial_cmp(&b.z_index).unwrap_or(std::cmp::Ordering::Equal));
+        let needed_vertex_count = self.draw_calls.len() * 6;
 
-        let mut flattened_vertices = Vec::with_capacity(self.draw_calls.len() * 6);
-        for call in &self.draw_calls {
-            flattened_vertices.extend_from_slice(&call.vertices);
-        }
+        if is_dirty || self.last_vertex_count != needed_vertex_count {
+            // Sort draw calls by z-index (lowest to highest) for back-to-front rendering
+            self.draw_calls.sort_by(|a, b| a.z_index.partial_cmp(&b.z_index).unwrap_or(std::cmp::Ordering::Equal));
 
-        // Reallocate buffer if it's too small or missing
-        let needed_size = (flattened_vertices.len() * mem::size_of::<VertexInput>()) as u64;
-        let mut recreate = false;
-        
-        if let Some(buf) = &self.vertex_buffer {
-            if buf.size() < needed_size {
+            let mut flattened_vertices = Vec::with_capacity(needed_vertex_count);
+            for call in &self.draw_calls {
+                flattened_vertices.extend_from_slice(&call.vertices);
+            }
+
+            // Reallocate buffer if it's too small or missing
+            let needed_size = (flattened_vertices.len() * mem::size_of::<VertexInput>()) as u64;
+            let mut recreate = false;
+            
+            if let Some(buf) = &self.vertex_buffer {
+                if buf.size() < needed_size {
+                    recreate = true;
+                }
+            } else {
                 recreate = true;
             }
-        } else {
-            recreate = true;
-        }
 
-        if recreate {
-            self.vertex_buffer = Some(device.device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some("SpriteBatcher Vertex Buffer"),
-                size: needed_size.next_power_of_two(),
-                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-                mapped_at_creation: false,
-            }));
+            if recreate && needed_size > 0 {
+                self.vertex_buffer = Some(device.device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some("SpriteBatcher Vertex Buffer"),
+                    size: needed_size.next_power_of_two().max(1024),
+                    usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+                    mapped_at_creation: false,
+                }));
+            }
+
+            if let Some(buf) = &self.vertex_buffer {
+                if needed_size > 0 {
+                    device.queue.write_buffer(buf, 0, bytemuck::cast_slice(&flattened_vertices));
+                }
+            }
+            self.last_vertex_count = flattened_vertices.len();
         }
 
         if let Some(buf) = &self.vertex_buffer {
-            device.queue.write_buffer(buf, 0, bytemuck::cast_slice(&flattened_vertices));
-            render_pass.set_vertex_buffer(0, buf.slice(0..needed_size));
-            render_pass.draw(0..(flattened_vertices.len() as u32), 0..1);
+            if self.last_vertex_count > 0 {
+                let bytes = (self.last_vertex_count * mem::size_of::<VertexInput>()) as u64;
+                render_pass.set_vertex_buffer(0, buf.slice(0..bytes));
+                render_pass.draw(0..(self.last_vertex_count as u32), 0..1);
+            }
         }
 
         self.draw_calls.clear();

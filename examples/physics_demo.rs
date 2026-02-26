@@ -32,6 +32,7 @@ fn main() -> Result<()> {
                     position: Vec2::new(0.0, -200.0),
                     rotation: 0.0,
                     scale: Vec2::ONE,
+                    dirty: true,
                 },
             );
             world.insert(
@@ -62,6 +63,7 @@ fn main() -> Result<()> {
                         position: Vec2::new(x, y),
                         rotation: std::f32::consts::PI / 4.0, // 45 deg tilt
                         scale: Vec2::ONE,
+                        dirty: true,
                     },
                 );
 

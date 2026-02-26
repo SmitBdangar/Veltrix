@@ -4,6 +4,7 @@
 use anyhow::Result;
 use glam::Vec2;
 use veltrix::prelude::*;
+use veltrix::ecs::world::EntityExt;
 use std::borrow::Cow;
 use wgpu::util::DeviceExt;
 
@@ -72,7 +73,7 @@ fn main() -> Result<()> {
 
     // Using `PlayerEnt` trick to ferry the ball entity into the state quickly.
     // Realistically we just loop through the world.
-    let mut initial_ball = Entity::default();
+    let mut initial_ball = Entity::null();
             
     engine.run(
         // -- ON START --
@@ -229,6 +230,7 @@ fn main() -> Result<()> {
                 position: Vec2::new(-PADDLE_START_X, 0.0),
                 rotation: 0.0,
                 scale: PADDLE_SIZE, // Visually match collider size
+                dirty: true,
             });
             world.insert(p1, Sprite {
                 texture: None::<veltrix::assets::Handle<veltrix::renderer::Texture>>,
@@ -252,6 +254,7 @@ fn main() -> Result<()> {
                 position: Vec2::new(PADDLE_START_X, 0.0),
                 rotation: 0.0,
                 scale: PADDLE_SIZE, // Visually match collider size
+                dirty: true,
             });
             world.insert(p2, Sprite {
                 texture: None::<veltrix::assets::Handle<veltrix::renderer::Texture>>,
@@ -275,6 +278,7 @@ fn main() -> Result<()> {
                 position: Vec2::ZERO,
                 rotation: 0.0,
                 scale: BALL_SIZE,
+                dirty: true,
             });
             world.insert(initial_ball, Sprite {
                 texture: None::<veltrix::assets::Handle<veltrix::renderer::Texture>>,
@@ -299,6 +303,7 @@ fn main() -> Result<()> {
                 position: Vec2::new(0.0, 300.0 + WALL_THICKNESS / 2.0),
                 rotation: 0.0,
                 scale: Vec2::new(800.0, WALL_THICKNESS),
+                dirty: true,
             });
             world.insert(top_wall, Sprite {
                 texture: None::<veltrix::assets::Handle<veltrix::renderer::Texture>>,
@@ -321,6 +326,7 @@ fn main() -> Result<()> {
                 position: Vec2::new(0.0, -300.0 - WALL_THICKNESS / 2.0),
                 rotation: 0.0,
                 scale: Vec2::new(800.0, WALL_THICKNESS),
+                dirty: true,
             });
             world.insert(bot_wall, Sprite {
                 texture: None::<veltrix::assets::Handle<veltrix::renderer::Texture>>,
@@ -353,7 +359,7 @@ fn main() -> Result<()> {
         |world, resources, dt| {
             let input = resources.get::<InputManager>().unwrap();
             
-            let mut q = QueryMut::<(Paddle, Transform2D)>::new(world);
+            let mut q = QueryMut::<(&Paddle, &mut Transform2D)>::new(world);
             
             for (_e, (paddle, transform)) in q.iter_mut() {
                 let mut move_dir = 0.0;
@@ -387,7 +393,7 @@ fn main() -> Result<()> {
             let mut ball_pos = Vec2::ZERO;
             let mut reset_ball = false;
 
-            let mut q_ball = QueryMut::<(Transform2D, Velocity)>::new(world);
+            let mut q_ball = QueryMut::<(&mut Transform2D, &mut Velocity)>::new(world);
             for (e, (transform, vel)) in q_ball.iter_mut() {
                 if e == state.ball_entity {
                     transform.position += vel.0 * fixed_dt as f32;
@@ -421,11 +427,11 @@ fn main() -> Result<()> {
             // 2. Perform Custom AABB Collision with Paddles
             // (We are doing this manually rather than through Rapier2D to test ECS data access)
             if !reset_ball {
-                let q_paddles = Query::<(Paddle, Transform2D)>::new(world);
+                let mut q_paddles = Query::<(&Paddle, &Transform2D)>::new(world);
                 let ball_rect = Rect::new(ball_pos - BALL_SIZE / 2.0, BALL_SIZE);
                 let mut bounce_info = None;
 
-                for (_e, (_paddle, p_transform)) in q_paddles.iter() {
+                for (_e, (_paddle, p_transform)) in &mut q_paddles.iter() {
                     let paddle_rect = Rect::new(p_transform.position - PADDLE_SIZE / 2.0, PADDLE_SIZE);
                     
                     if ball_rect.intersects(&paddle_rect) {
@@ -437,7 +443,7 @@ fn main() -> Result<()> {
 
                 if let Some(p_pos) = bounce_info {
                     // Reflect the ball on the X axis
-                    if let Some(vel) = world.get_mut::<Velocity>(state.ball_entity) {
+                    if let Some(mut vel) = world.get_mut::<Velocity>(state.ball_entity) {
                         // Only bounce if heading towards the paddle (prevent getting stuck inside)
                         if (ball_pos.x < p_pos.x && vel.0.x > 0.0) ||
                            (ball_pos.x > p_pos.x && vel.0.x < 0.0) {
@@ -457,10 +463,10 @@ fn main() -> Result<()> {
 
             // 3. Reset Ball if scored
             if reset_ball {
-                if let Some(transform) = world.get_mut::<Transform2D>(state.ball_entity) {
+                if let Some(mut transform) = world.get_mut::<Transform2D>(state.ball_entity) {
                     transform.position = Vec2::ZERO;
                 }
-                if let Some(vel) = world.get_mut::<Velocity>(state.ball_entity) {
+                if let Some(mut vel) = world.get_mut::<Velocity>(state.ball_entity) {
                     // Serve towards the winner
                     let direction = if ball_pos.x > 0.0 { -1.0 } else { 1.0 };
                     vel.0 = Vec2::new(BALL_START_SPEED * direction, BALL_START_SPEED * 0.5 * direction);
@@ -531,17 +537,31 @@ fn main() -> Result<()> {
                 }
 
                 // 3. Batch and Draw Sprites
+                let cull_bounds = {
+                    let current_cam = world.get_mut::<Camera2D>(camera_entity).unwrap();
+                    let (min_x, min_y, max_x, max_y) = current_cam.visible_bounds();
+                    veltrix::math::Rect {
+                        min: glam::Vec2::new(min_x, min_y),
+                        max: glam::Vec2::new(max_x, max_y),
+                    }
+                };
+
                 // Build the dynamic vertex batch
-                let mut q = QueryMut::<(Transform2D, Sprite)>::new(world);
+                let mut q = QueryMut::<(&mut Transform2D, &Sprite)>::new(world);
+                let mut is_any_dirty = false;
                 for (_e, (transform, sprite)) in q.iter_mut() {
-                    renderer_state.batcher.draw_sprite(sprite, transform, 0.0);
+                    renderer_state.batcher.draw_sprite(sprite, transform, 0.0, Some(&cull_bounds));
+                    if transform.is_dirty() {
+                        is_any_dirty = true;
+                        transform.mark_clean();
+                    }
                 }
                 
                 // Push it to GPU inside the render pass
                 render_pass.set_pipeline(&renderer_state.pipeline.wgpu_pipeline);
                 render_pass.set_bind_group(0, &renderer_state.camera_bind_group, &[]);
                 render_pass.set_bind_group(1, &tex_bind.0, &[]);
-                renderer_state.batcher.flush(&rd, &mut render_pass);
+                renderer_state.batcher.flush_with_dirty(&rd, &mut render_pass, is_any_dirty);
             } // Close encoder block, dropping render_pass which releases borrows of renderer_state
             
             // 4. Submit to GPU

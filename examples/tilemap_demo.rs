@@ -29,6 +29,7 @@ fn main() -> Result<()> {
                     position: Vec2::new(100.0, 100.0),
                     rotation: 0.0,
                     scale: Vec2::ONE,
+                    dirty: true,
                 },
             );
 
@@ -72,12 +73,13 @@ fn main() -> Result<()> {
                     position: Vec2::ZERO,
                     rotation: 0.0,
                     scale: Vec2::ONE,
+                    dirty: true,
                 },
             );
         },
         |world, _resources, dt| {
             // Very simple constant movement for the player just to demo camera follow
-            let mut q = QueryMut::<Transform2D>::new(world);
+            let mut q = QueryMut::<&mut Transform2D>::new(world);
             // In a real game we'd filter by a `Player` tag component
             // We just grab the first transform we see for this stub
             for (_entity, transform) in q.iter_mut() {

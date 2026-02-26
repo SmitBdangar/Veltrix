@@ -39,11 +39,11 @@ winit = "0.29"
 # GPU Rendering
 wgpu = "0.19"
 
-# Math
-glam = { version = "0.25", features = ["serde"] }
+# Math (SIMD-accelerated)
+glam = { version = "0.25", features = ["serde", "fast-math"] }
 
 # Physics
-rapier2d = { version = "0.17", features = ["default"] }
+rapier2d = { version = "0.17", features = ["default", "parallel", "simd-stable"] }
 
 # Audio
 rodio = { version = "0.17", features = ["wav", "vorbis", "mp3"] }
@@ -102,6 +102,9 @@ sysinfo = "0.30"
 quick-xml = { version = "0.31", features = ["serialize"] }
 lazy_static = "1.5.0"
 ab_glyph = "0.2.32"
+
+# Multi-threading
+rayon = "1.10"
 
 [dev-dependencies]
 env_logger = "0.11"

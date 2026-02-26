@@ -63,7 +63,7 @@ impl TilemapRenderer {
                                 src_rect: Some(src_rect),
                             };
 
-                            batcher.draw_sprite(&sprite, &tile_transform, z_index);
+                            batcher.draw_sprite(&sprite, &tile_transform, z_index, None);
                         }
                     }
                 }
