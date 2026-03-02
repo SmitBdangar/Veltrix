@@ -19,20 +19,20 @@
 
 | Module | Capabilities |
 |---|---|
-| 🎮 **ECS** | Fast bespoke archetype ECS — `World`, `Query`, `QueryMut`, `Resources` |
-| 🖥️ **Renderer** | `wgpu` sprite batching, z-sorted render layers, texture atlases, WGSL shaders |
-| 🅰️ **Text** | `ab_glyph` font rasterizer, ASCII atlas, `TextBatcher` |
-| ✨ **Particles** | ECS-driven emitters with lifetime, velocity variance, and color gradients |
-| 🎬 **Transitions** | `ScreenTransition` fade-in/out with pluggable scene manager |
-| ⚡ **Physics** | `rapier2d` rigid bodies, colliders, raycasting, broadphase |
-| 🔊 **Audio** | `rodio` bus graph (Master/SFX/Music), 2D spatial falloff |
-| 🗺️ **Tilemap** | Chunk-based tile batching, `.tmx` Tiled loader |
-| 🎥 **Camera** | Orthographic, trauma-based shake, smooth entity-follow |
-| ⌨️ **Input** | Keyboard, mouse, gamepad (gilrs), action maps |
-| 🖼️ **Assets** | Typed handles, async `AssetServer`, hot-reload via `notify` |
-| 🖱️ **Window** | `winit` windowing, custom icon, cursor hide/show |
-| 🐛 **Debug** | FPS profiler, in-game console, inspector, debug line renderer |
-| 💾 **Save** | `RON`-based save/load, scene serialiser |
+| **ECS** | Fast bespoke archetype ECS — `World`, `Query`, `QueryMut`, `Resources` |
+| **Renderer** | `wgpu` sprite batching, z-sorted render layers, texture atlases, WGSL shaders |
+| **Text** | `ab_glyph` font rasterizer, ASCII atlas, `TextBatcher` |
+| **Particles** | ECS-driven emitters with lifetime, velocity variance, and color gradients |
+| **Transitions** | `ScreenTransition` fade-in/out with pluggable scene manager |
+| **Physics** | `rapier2d` rigid bodies, colliders, raycasting, broadphase |
+| **Audio** | `rodio` bus graph (Master/SFX/Music), 2D spatial falloff |
+| **Tilemap** | Chunk-based tile batching, `.tmx` Tiled loader |
+| **Camera** | Orthographic, trauma-based shake, smooth entity-follow |
+| **Input** | Keyboard, mouse, gamepad (gilrs), action maps |
+| **Assets** | Typed handles, async `AssetServer`, hot-reload via `notify` |
+| **Window** | `winit` windowing, custom icon, cursor hide/show |
+| **Debug** | FPS profiler, in-game console, inspector, debug line renderer |
+| **Save** | `RON`-based save/load, scene serialiser |
 
 ---
 
